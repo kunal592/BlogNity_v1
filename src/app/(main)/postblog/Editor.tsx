@@ -39,7 +39,6 @@ export default function Editor() {
         content,
         status,
         visibility: 'PUBLIC',
-        isExclusive: false,
         tags: tags.split(',').map(t => t.trim()).filter(Boolean),
       }, user.id);
       toast({ title: `Post ${status === 'DRAFT' ? 'saved as draft' : 'published'}!` });

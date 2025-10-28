@@ -71,11 +71,10 @@ export const getUsers = async (): Promise<User[]> => {
 
 
 // --- POST API ---
-export const getPosts = async (options?: { isExclusive?: boolean }): Promise<any[]> => {
+export const getPosts = async (): Promise<any[]> => {
     return prisma.post.findMany({
       where: { 
         status: 'PUBLISHED',
-        isExclusive: options?.isExclusive
       },
       include: {
         author: true,
@@ -126,8 +125,8 @@ const generateSlug = (title: string) => {
       .replace(/(^-|-$)+/g, '');
 };
 
-export const createPost = async (postData: { title: string; content: string; status: 'DRAFT' | 'PUBLISHED', visibility: 'PUBLIC' | 'PRIVATE', isExclusive: boolean, tags?: string[] }, authorId: string): Promise<Post> => {
-    const { title, content, status, visibility, isExclusive, tags = [] } = postData;
+export const createPost = async (postData: { title: string; content: string; status: 'DRAFT' | 'PUBLISHED', visibility: 'PUBLIC' | 'PRIVATE', tags?: string[] }, authorId: string): Promise<Post> => {
+    const { title, content, status, visibility, tags = [] } = postData;
     let slug = generateSlug(title);
 
     const existingPost = await prisma.post.findUnique({ where: { slug }});
@@ -142,7 +141,6 @@ export const createPost = async (postData: { title: string; content: string; sta
             slug,
             status,
             visibility,
-            isExclusive,
             authorId,
             publishedAt: status === 'PUBLISHED' ? new Date() : null,
         }
@@ -172,7 +170,7 @@ export const createPost = async (postData: { title: string; content: string; sta
 };
 
 export const updatePost = async (postId: string, updateData: any): Promise<Post | undefined> => {
-    const { title, content, status, visibility, isExclusive } = updateData;
+    const { title, content, status, visibility } = updateData;
     let slug = updateData.slug;
     if (title && !slug) {
         slug = generateSlug(title);
@@ -186,7 +184,6 @@ export const updatePost = async (postId: string, updateData: any): Promise<Post 
             slug,
             status,
             visibility,
-            isExclusive,
             updatedAt: new Date(),
             publishedAt: (await prisma.post.findUnique({where: {id: postId}}))?.status !== 'PUBLISHED' && status === 'PUBLISHED' ? new Date() : undefined,
         }
