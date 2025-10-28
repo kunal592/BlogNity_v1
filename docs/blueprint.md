@@ -1,5 +1,5 @@
 # **App Name**: Blognity SaaS
-
+- authentication is working property so dont edit the auth logic
 ## Core Features:
 
 - Public Blog Display: Displays all public blogs in grid or list view with title, author, likes, tags, excerpt, and thumbnail. Includes like, bookmark, share, summarize, follow, and comment buttons.
@@ -20,3 +20,5 @@
 - Use Lucide React icons for a consistent and clean look across the platform.
 - Premium SaaS layout with sidebar navigation that hides on toggle. Responsive design for mobile, tablet, and desktop.
 - Smooth transitions via Framer Motion for all UI elements. Use toasts for all success operations (like, follow, bookmark, etc.).
+
+
