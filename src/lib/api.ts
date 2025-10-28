@@ -274,4 +274,8 @@ export const toggleLike = async (postId: string, userId: string) => {
       return { bookmarked: true };
     }
   };
-  
+
+  export const sendContactMessage = async (formData: { name: string; email: string; message: string; }) => {
+    console.log('Contact message received:', formData);
+    return { success: true };
+};
