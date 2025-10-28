@@ -154,7 +154,7 @@ export const createPost = async (postData: { title: string; content: string; sta
             const tagSlug = generateSlug(formattedTagName);
             const tag = await prisma.tag.upsert({
                 where: { slug: tagSlug },
-                update: {},
+                update: { name: formattedTagName },
                 create: { name: formattedTagName, slug: tagSlug },
             });
 
