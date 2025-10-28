@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import type { Post, User, Comment } from '@prisma/client';
 import Image from 'next/image';
-import { notFound } from 'next/navigation';
+import { notFound, useParams } from 'next/navigation';
 
 interface PostWithDetails extends Post {
   author: User;
@@ -15,12 +15,16 @@ interface PostWithDetails extends Post {
   comments: (Comment & { author: User })[];
 }
 
-export default function BlogPostPage({ params }: { params: { slug: string } }) {
+export default function BlogPostPage() {
+  const params = useParams();
+  const slug = params.slug as string;
   const [post, setPost] = useState<PostWithDetails | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    getPost(params.slug)
+    if (!slug) return;
+
+    getPost(slug)
       .then(data => {
         if (!data) {
           notFound();
@@ -31,7 +35,7 @@ export default function BlogPostPage({ params }: { params: { slug: string } }) {
       .finally(() => {
         setLoading(false);
       });
-  }, [params.slug]);
+  }, [slug]);
 
   if (loading) {
     return <div>Loading post...</div>;
@@ -68,7 +72,7 @@ export default function BlogPostPage({ params }: { params: { slug: string } }) {
             </div>
           </div>
           <div className="flex gap-2 mt-4">
-            {post.tags.map(({ tag }) => (
+            {post.tags?.map(({ tag }) => (
               <Badge key={tag.id} variant="secondary">{tag.name}</Badge>
             ))}
           </div>
@@ -80,10 +84,10 @@ export default function BlogPostPage({ params }: { params: { slug: string } }) {
 
       {/* --- Comments Section --- */}
       <div className="mt-8">
-        <h2 className="text-2xl font-bold mb-4">Comments ({post.comments.length})</h2>
+        <h2 className="text-2xl font-bold mb-4">Comments ({post.comments?.length || 0})</h2>
         {/* Add comment submission form here */}
         <div className="space-y-6 mt-6">
-          {post.comments.map(comment => (
+          {post.comments?.map(comment => (
             <Card key={comment.id}>
               <CardContent className="p-4 flex gap-4">
                 <Avatar className="h-10 w-10">
