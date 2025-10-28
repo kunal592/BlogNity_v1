@@ -1,52 +1,72 @@
-import { getUser, getPostsByAuthor, getPosts, getUsers } from '@/lib/api';
+'use client';
+
+import { useEffect, useState } from 'react';
+import { useSession } from 'next-auth/react';
+import { getUserProfile } from '@/lib/api';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent } from '@/components/ui/card';
 import { Edit } from 'lucide-react';
 import BlogCard from '../home/BlogCard';
+import { useRouter } from 'next/navigation';
 
-export default async function ProfilePage() {
-  // In a real app, this might come from the URL, but here we get the logged-in user.
-  const currentUserId = '1';
-  const user = await getUser(currentUserId);
-  
-  if (!user) {
-    return <div>User not found</div>;
+// Define a type for the user profile data
+interface UserProfile {
+  id: string;
+  name: string | null;
+  username: string | null;
+  image: string | null;
+  bio: string | null;
+  postsCount: number;
+  followersCount: number;
+  followingCount: number;
+  posts: any[]; // Consider creating a specific Post type
+  bookmarkedPosts: any[];
+  followingUsers: any[];
+}
+
+export default function ProfilePage() {
+  const { data: session, status } = useSession();
+  const router = useRouter();
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+
+  useEffect(() => {
+    if (status === 'authenticated' && session?.user?.id) {
+      getUserProfile(session.user.id).then(data => {
+        setUserProfile(data);
+      });
+    } else if (status === 'unauthenticated') {
+      router.push('/signin');
+    }
+  }, [session, status, router]);
+
+  if (status === 'loading' || !userProfile) {
+    return <div>Loading profile...</div>;
   }
-
-  const userPosts = await getPostsByAuthor(user.id);
-  const allPosts = await getPosts();
-  const allUsers = await getUsers();
-
-  const bookmarkedPosts = allPosts.filter(post => user.bookmarkedPosts.includes(post.id))
-    .map(post => ({
-      ...post,
-      author: allUsers.find(u => u.id === post.authorId)
-    }));
-
-  const followingUsers = allUsers.filter(u => user.followingUsers.includes(u.id));
+  
+  const { name, username, image, bio, postsCount, followersCount, followingCount, posts, bookmarkedPosts, followingUsers } = userProfile;
 
   return (
-    <div className="container mx-auto">
+    <div className="container mx-auto py-8">
       <Card className="mb-8">
         <CardContent className="p-6">
           <div className="flex flex-col md:flex-row items-start gap-6">
             <Avatar className="w-24 h-24 md:w-32 md:h-32 border-4 border-background shadow-md">
-              <AvatarImage src={user.avatarUrl} alt={user.name} />
-              <AvatarFallback className="text-4xl">{user.name.charAt(0)}</AvatarFallback>
+              {image && <AvatarImage src={image} alt={name || 'User'} />}
+              <AvatarFallback className="text-4xl">{name ? name.charAt(0) : 'U'}</AvatarFallback>
             </Avatar>
             <div className="flex-1">
               <div className="flex justify-between items-start">
-                <h1 className="text-3xl font-bold">{user.name}</h1>
+                <h1 className="text-3xl font-bold">{name}</h1>
                 <Button variant="outline"><Edit className="mr-2 h-4 w-4" /> Edit Profile</Button>
               </div>
-              <p className="text-muted-foreground">@{user.username}</p>
-              <p className="mt-4">{user.bio}</p>
+              <p className="text-muted-foreground">@{username}</p>
+              <p className="mt-4">{bio || 'This user has not set a bio yet.'}</p>
               <div className="flex gap-6 mt-4 text-sm">
-                <div><span className="font-semibold">{userPosts.length}</span> Posts</div>
-                <div><span className="font-semibold">{user.followers}</span> Followers</div>
-                <div><span className="font-semibold">{user.following}</span> Following</div>
+                <div><span className="font-semibold">{postsCount}</span> Posts</div>
+                <div><span className="font-semibold">{followersCount}</span> Followers</div>
+                <div><span className="font-semibold">{followingCount}</span> Following</div>
               </div>
             </div>
           </div>
@@ -61,8 +81,8 @@ export default async function ProfilePage() {
         </TabsList>
         <TabsContent value="blogs" className="mt-6">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {userPosts.map(post => (
-              <BlogCard key={post.id} post={post} author={user} />
+            {posts.map(post => (
+              <BlogCard key={post.id} post={post} author={userProfile} />
             ))}
           </div>
         </TabsContent>
@@ -80,8 +100,8 @@ export default async function ProfilePage() {
                         <CardContent className="p-4 flex items-center justify-between">
                             <div className="flex items-center gap-4">
                                 <Avatar>
-                                    <AvatarImage src={followedUser.avatarUrl} alt={followedUser.name} />
-                                    <AvatarFallback>{followedUser.name.charAt(0)}</AvatarFallback>
+                                    {followedUser.image && <AvatarImage src={followedUser.image} alt={followedUser.name} />}
+                                    <AvatarFallback>{followedUser.name ? followedUser.name.charAt(0) : 'U'}</AvatarFallback>
                                 </Avatar>
                                 <div>
                                     <p className="font-semibold">{followedUser.name}</p>

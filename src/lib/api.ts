@@ -1,148 +1,175 @@
-// This file contains mock API functions to simulate backend interactions.
-// In a real application, these would be replaced with actual API calls.
+'use server';
 
-import { mockUsers, mockPosts, mockNotifications, deleteMockPost, mockContactMessages } from './mockData';
-import { simulateLatency } from './backendSetup';
-import type { User, Post, Notification, ContactMessage } from './types';
-import { v4 as uuidv4 } from 'uuid';
+import { PrismaClient } from '@prisma/client';
+import type { Post, User } from '@prisma/client';
+
+const prisma = new PrismaClient();
 
 // --- USER API ---
-export const getUser = async (userId: string): Promise<User | undefined> => {
-  await simulateLatency();
-  return mockUsers.find(u => u.id === userId);
+export const getUserProfile = async (userId: string) => {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    include: {
+      _count: {
+        select: {
+          posts: true,
+          receivedFollows: true, // Followers
+          sentFollows: true,     // Following
+        },
+      },
+      posts: {
+        where: { status: 'PUBLISHED' },
+        orderBy: { publishedAt: 'desc' },
+        include: { author: true }, 
+      },
+      bookmarks: {
+        orderBy: { createdAt: 'desc' },
+        include: {
+          post: {
+            include: {
+              author: true,
+            },
+          },
+        },
+      },
+      sentFollows: {
+          include: {
+              following: true, // The user they are following
+          }
+      }
+    },
+  });
+
+  if (!user) {
+    return null;
+  }
+
+  return {
+    id: user.id,
+    name: user.name,
+    username: user.username,
+    image: user.image,
+    bio: user.bio,
+    postsCount: user._count.posts,
+    followersCount: user._count.receivedFollows,
+    followingCount: user._count.sentFollows,
+    posts: user.posts,
+    bookmarkedPosts: user.bookmarks.map(b => b.post),
+    followingUsers: user.sentFollows.map(f => f.following)
+  };
+};
+
+export const getUser = async (userId: string): Promise<User | null> => {
+  return prisma.user.findUnique({ where: { id: userId }});
 };
 
 export const getUsers = async (): Promise<User[]> => {
-  await simulateLatency();
-  return mockUsers;
-}
-
-// --- POST API ---
-export const getPosts = async (): Promise<Post[]> => {
-  await simulateLatency();
-  // Return all posts for admin, only published for others
-  return mockPosts;
+  return prisma.user.findMany();
 };
 
-export const getPost = async (postId: string): Promise<Post | undefined> => {
-  await simulateLatency();
-  return mockPosts.find(p => p.id === postId);
+
+// --- POST API ---
+export const getPosts = async (): Promise<any[]> => {
+    return prisma.post.findMany({
+      where: { status: 'PUBLISHED' },
+      include: {
+        author: true,
+        tags: { include: { tag: true } },
+      },
+      orderBy: { publishedAt: 'desc' },
+    });
+  };
+
+export const getPost = async (slug: string): Promise<any | null> => {
+    const post = await prisma.post.findUnique({
+        where: { slug },
+        include: {
+        author: true,
+        tags: { include: { tag: true } },
+        comments: {
+            include: { author: true },
+            where: { parentId: null },
+            orderBy: { createdAt: 'desc' },
+        },
+        },
+    });
+
+    if (post) {
+        await prisma.post.update({
+            where: { slug },
+            data: { viewsCount: { increment: 1 } },
+        });
+    }
+
+    return post;
 };
 
 export const getPostsByAuthor = async (authorId: string): Promise<Post[]> => {
-  await simulateLatency();
-  return mockPosts.filter(p => p.authorId === authorId);
+    return prisma.post.findMany({
+      where: { authorId },
+      orderBy: { createdAt: 'desc' },
+      include: {
+        author: true,
+      },
+    });
 };
 
-export const createPost = async (postData: Omit<Post, 'id' | 'likes' | 'likedBy' | 'comments' | 'publishedAt' | 'views' | 'isExclusive'>): Promise<Post> => {
-  await simulateLatency();
-  const newPost: Post = {
-    ...postData,
-    id: uuidv4(),
-    likes: 0,
-    likedBy: [],
-    comments: [],
-    publishedAt: postData.status === 'published' ? new Date().toISOString() : '',
-    views: 0,
-    isExclusive: false,
-  };
-  mockPosts.unshift(newPost);
-  return newPost;
-}
+const generateSlug = (title: string) => {
+    return title
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/(^-|-$)+/g, '');
+};
 
-export const updatePost = async (postId: string, updateData: Partial<Post>): Promise<Post | undefined> => {
-  await simulateLatency();
-  const postIndex = mockPosts.findIndex(p => p.id === postId);
-  if (postIndex === -1) return undefined;
+export const createPost = async (postData: { title: string; content: string; status: 'DRAFT' | 'PUBLISHED', visibility: 'PUBLIC' | 'PRIVATE' }, authorId: string): Promise<Post> => {
+    const { title, content, status, visibility } = postData;
+    let slug = generateSlug(title);
 
-  const originalPost = mockPosts[postIndex];
-  const updatedPost = { ...originalPost, ...updateData };
-  
-  // If status changes from draft to published, set publish date
-  if (originalPost.status === 'draft' && updatedPost.status === 'published') {
-    updatedPost.publishedAt = new Date().toISOString();
-  }
+    const existingPost = await prisma.post.findUnique({ where: { slug }});
+    if(existingPost) {
+        slug = `${slug}-${Date.now()}`;
+    }
 
-  mockPosts[postIndex] = updatedPost;
-  return updatedPost;
+    return prisma.post.create({
+        data: {
+            title,
+            content,
+            slug,
+            status,
+            visibility,
+            authorId,
+            publishedAt: status === 'PUBLISHED' ? new Date() : null,
+        }
+    });
+};
+
+export const updatePost = async (postId: string, updateData: any): Promise<Post | undefined> => {
+    const { title, content, status, visibility } = updateData;
+    let slug = updateData.slug;
+    if (title && !slug) {
+        slug = generateSlug(title);
+    }
+    
+    return prisma.post.update({
+        where: { id: postId },
+        data: {
+            title,
+            content,
+            slug,
+            status,
+            visibility,
+            updatedAt: new Date(),
+            publishedAt: (await prisma.post.findUnique({where: {id: postId}}))?.status !== 'PUBLISHED' && status === 'PUBLISHED' ? new Date() : undefined,
+        }
+    });
 };
 
 export const deletePost = async (postId: string): Promise<{ success: boolean }> => {
-  await simulateLatency();
-  const initialLength = mockPosts.length;
-  deleteMockPost(postId);
-  return { success: mockPosts.length < initialLength };
+    try {
+      await prisma.post.delete({ where: { id: postId } });
+      return { success: true };
+    } catch (error) {
+      console.error(error);
+      return { success: false };
+    }
 };
-
-
-// --- NOTIFICATION API ---
-export const getNotifications = async (userId: string): Promise<Notification[]> => {
-  await simulateLatency();
-  return mockNotifications.filter(n => n.userId === userId).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-};
-
-// --- CONTACT API ---
-export const sendContactMessage = async (formData: { name: string; email: string; message: string }): Promise<{ success: boolean }> => {
-  await simulateLatency();
-  const newMessage: ContactMessage = {
-    id: uuidv4(),
-    ...formData,
-    status: 'pending',
-    createdAt: new Date().toISOString(),
-  }
-  mockContactMessages.unshift(newMessage);
-  return { success: true };
-};
-
-export const getContactMessages = async (): Promise<ContactMessage[]> => {
-    await simulateLatency();
-    return mockContactMessages.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-}
-
-export const resolveContactMessage = async (id: string): Promise<{ success: boolean }> => {
-    await simulateLatency();
-    const message = mockContactMessages.find(m => m.id === id);
-    if (!message) return { success: false };
-    message.status = 'resolved';
-    return { success: true };
-}
-
-// --- INTERACTIONS ---
-
-export const toggleLike = async (postId: string, userId: string): Promise<Post | undefined> => {
-  await simulateLatency(100);
-  const post = mockPosts.find(p => p.id === postId);
-  if (!post) return undefined;
-
-  const userIndex = post.likedBy.indexOf(userId);
-  if (userIndex > -1) {
-    post.likedBy.splice(userIndex, 1);
-    post.likes--;
-  } else {
-    post.likedBy.push(userId);
-    post.likes++;
-  }
-  return post;
-};
-
-export const toggleBookmark = async (postId: string, userId: string): Promise<User | undefined> => {
-  await simulateLatency(100);
-  const user = mockUsers.find(u => u.id === userId);
-  if (!user) return undefined;
-
-  const postIndex = user.bookmarkedPosts.indexOf(postId);
-  if (postIndex > -1) {
-    user.bookmarkedPosts.splice(postIndex, 1);
-  } else {
-    user.bookmarkedPosts.push(postId);
-  }
-  return user;
-};
-
-export const togglePostExclusivity = async (postId: string): Promise<{ success: boolean }> => {
-    await simulateLatency();
-    const post = mockPosts.find(p => p.id === postId);
-    if (!post) return { success: false };
-    post.isExclusive = !post.isExclusive;
-    return { success: true };
-}
