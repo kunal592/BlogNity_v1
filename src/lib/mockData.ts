@@ -1,3 +1,4 @@
+
 import { v4 as uuidv4 } from 'uuid';
 import { User, Post, Comment, Notification, TeamMember, ContactMessage } from './types';
 import { PlaceHolderImages } from './placeholder-images';
@@ -10,6 +11,7 @@ export let mockUsers: User[] = [
     id: '1',
     name: 'Alex Johnson',
     username: 'alexj',
+    email: 'alex.johnson@example.com',
     avatarUrl: getUserAvatar(1),
     bio: 'Full-stack developer and tech blogger. Passionate about Next.js and serverless architecture.',
     followers: 1200,
@@ -24,6 +26,7 @@ export let mockUsers: User[] = [
     id: '2',
     name: 'Brenda Smith',
     username: 'brendas',
+    email: 'brenda.smith@example.com',
     avatarUrl: getUserAvatar(2),
     bio: 'UX/UI designer creating beautiful and intuitive web experiences.',
     followers: 800,
@@ -38,6 +41,7 @@ export let mockUsers: User[] = [
     id: '3',
     name: 'Charlie Brown',
     username: 'charlieb',
+    email: 'charlie.brown@example.com',
     avatarUrl: getUserAvatar(3),
     bio: 'Data scientist and avid writer. Exploring the intersection of AI and creativity.',
     followers: 2500,
@@ -52,6 +56,7 @@ export let mockUsers: User[] = [
     id: '4',
     name: 'Diana Prince',
     username: 'dianap',
+    email: 'diana.prince@example.com',
     avatarUrl: getUserAvatar(4),
     bio: 'Marketing guru and content strategist. Helping brands tell their story.',
     followers: 500,
@@ -223,6 +228,9 @@ export let mockContactMessages: ContactMessage[] = [
   },
 ];
 
+export function findUserByEmail(email: string): User | undefined {
+  return mockUsers.find((user) => user.email === email);
+}
 
 export function deleteMockPost(postId: string) {
   const index = mockPosts.findIndex(p => p.id === postId);

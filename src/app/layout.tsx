@@ -1,7 +1,7 @@
 
 import type {Metadata} from 'next';
 import './globals.css';
-import { AuthProvider } from '@/context/AuthContext';
+import { Providers } from './providers';
 import { ThemeProvider } from '@/context/ThemeContext';
 import { Toaster } from '@/components/ui/toaster';
 
@@ -25,10 +25,10 @@ export default function RootLayout({
       </head>
       <body className="font-body antialiased">
         <ThemeProvider>
-          <AuthProvider>
+          <Providers>
             {children}
             <Toaster />
-          </AuthProvider>
+          </Providers>
         </ThemeProvider>
       </body>
     </html>

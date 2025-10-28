@@ -11,7 +11,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { useAuth } from '@/context/AuthContext';
+import { useSession, signOut } from "next-auth/react";
 import {
   LayoutDashboard,
   LogOut,
@@ -21,14 +21,16 @@ import {
 import Link from 'next/link';
 
 export function UserNav() {
-  const { user, logout } = useAuth();
+  const { data: session } = useSession();
 
-  if (!user) {
+  if (!session?.user) {
     return null;
   }
 
+  const { user } = session;
+
   const userInitials = user.name
-    .split(' ')
+    ?.split(' ')
     .map((n) => n[0])
     .join('');
 
@@ -37,7 +39,7 @@ export function UserNav() {
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" className="relative h-10 w-10 rounded-full">
           <Avatar className="h-10 w-10">
-            <AvatarImage src={user.avatarUrl} alt={user.name} />
+            <AvatarImage src={user.image ?? undefined} alt={user.name ?? undefined} />
             <AvatarFallback>{userInitials}</AvatarFallback>
           </Avatar>
         </Button>
@@ -47,7 +49,7 @@ export function UserNav() {
           <div className="flex flex-col space-y-1">
             <p className="text-sm font-medium leading-none">{user.name}</p>
             <p className="text-xs leading-none text-muted-foreground">
-              @{user.username}
+              {user.email}
             </p>
           </div>
         </DropdownMenuLabel>
@@ -73,7 +75,7 @@ export function UserNav() {
           </DropdownMenuItem>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={logout}>
+        <DropdownMenuItem onClick={() => signOut()}>
           <LogOut className="mr-2 h-4 w-4" />
           <span>Log out</span>
         </DropdownMenuItem>
