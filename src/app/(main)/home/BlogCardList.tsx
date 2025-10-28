@@ -89,7 +89,7 @@ export default function BlogCardList({ post, author }: BlogCardListProps) {
       <CardContent className="p-4 flex gap-4">
         <div className="relative w-1/3 md:w-1/4 flex-shrink-0">
            <Image
-            src={post.thumbnailUrl}
+            src={post.thumbnailUrl || '/placeholder.jpg'}
             alt={post.title}
             layout="fill"
             className="object-cover rounded-md"
@@ -119,7 +119,7 @@ export default function BlogCardList({ post, author }: BlogCardListProps) {
                 {author && (
                     <div className="flex items-center gap-2 text-sm">
                         <Avatar className="h-6 w-6">
-                            <AvatarImage src={author.avatarUrl} alt={author.name} />
+                            <AvatarImage src={author.avatarUrl || '/user-placeholder.png'} alt={author.name} />
                             <AvatarFallback>{author.name.charAt(0)}</AvatarFallback>
                         </Avatar>
                         <span>{author.name}</span>

@@ -329,28 +329,10 @@ export const sendContactMessage = async (formData: { name: string; email: string
             },
         });
 
-        const transporter = nodemailer.createTransport({
-            host: process.env.EMAIL_HOST || 'smtp.example.com',
-            port: Number(process.env.EMAIL_PORT) || 587,
-            secure: process.env.EMAIL_SECURE === 'true',
-            auth: {
-                user: process.env.EMAIL_USER || 'user@example.com',
-                pass: process.env.EMAIL_PASS || 'password',
-            },
-        });
-
-        await transporter.sendMail({
-            from: `"${formData.name}" <${formData.email}>`,
-            to: process.env.CONTACT_EMAIL || 'contact@example.com',
-            subject: 'New Contact Form Message',
-            text: formData.message,
-            html: `<p>${formData.message}</p>`,
-        });
-
         return { success: true };
     } catch (error) {
-        console.error(error);
-        return { success: false };
+        console.error('Failed to save contact message:', error);
+        return { success: false, message: 'Failed to save message.' };
     }
 };
 
