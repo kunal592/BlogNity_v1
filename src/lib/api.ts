@@ -22,7 +22,14 @@ export const getUserProfile = async (userId: string) => {
       posts: {
         where: { status: 'PUBLISHED' },
         orderBy: { publishedAt: 'desc' },
-        include: { author: true }, 
+        include: { 
+          author: true,
+          tags: {
+            include: {
+              tag: true,
+            },
+          },
+        }, 
       },
       bookmarks: {
         orderBy: { createdAt: 'desc' },
