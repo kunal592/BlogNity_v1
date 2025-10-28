@@ -244,43 +244,15 @@ export const getNotifications = async (userId: string) => {
 
 // --- INTERACTIONS ---
 export const toggleLike = async (postId: string, userId: string) => {
-    const existingLike = await prisma.like.findUnique({
-      where: {
-        userId_postId: {
-          userId,
-          postId,
+    const res = await fetch('/api/posts/like', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
         },
-      },
+        body: JSON.stringify({ postId, userId }),
     });
-  
-    if (existingLike) {
-      await prisma.like.delete({
-        where: {
-          userId_postId: {
-            userId,
-            postId,
-          },
-        },
-      });
-      const updatedPost = await prisma.post.update({
-          where: { id: postId },
-          data: { likesCount: { decrement: 1 } },
-      });
-      return { liked: false, likesCount: updatedPost.likesCount };
-    } else {
-      await prisma.like.create({
-        data: {
-          userId,
-          postId,
-        },
-      });
-      const updatedPost = await prisma.post.update({
-          where: { id: postId },
-          data: { likesCount: { increment: 1 } },
-      });
-      return { liked: true, likesCount: updatedPost.likesCount };
-    }
-  };
+    return res.json();
+};
   
   export const toggleBookmark = async (postId: string, userId: string) => {
     const existingBookmark = await prisma.bookmark.findUnique({
