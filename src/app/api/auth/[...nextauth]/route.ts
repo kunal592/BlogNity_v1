@@ -15,9 +15,18 @@ export const authOptions: AuthOptions = {
     }),
   ],
   callbacks: {
-    session({ session, user }) {
-      session.user.role = user.role;
-      session.user.username = user.username;
+    jwt({ token, user }) {
+      if (user) {
+        token.id = user.id;
+        token.role = user.role;
+        token.username = user.username;
+      }
+      return token;
+    },
+    session({ session, token }) {
+        session.user.id = token.id;
+        session.user.role = token.role;
+        session.user.username = token.username;
       return session;
     },
   },

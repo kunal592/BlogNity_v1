@@ -122,7 +122,7 @@ export default function BlogCard({ post, author }: BlogCardProps) {
             <div className="flex items-center gap-2">
               <Avatar className="h-8 w-8">
                 <AvatarImage src={author.avatarUrl} alt={author.name} />
-                <AvatarFallback>{author.name.charAt(0)}</Fallback>
+                <AvatarFallback>{author.name.charAt(0)}</AvatarFallback>
               </Avatar>
               <span className="text-sm font-medium">{author.name}</span>
             </div>
