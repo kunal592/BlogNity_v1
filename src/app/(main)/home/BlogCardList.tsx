@@ -133,7 +133,7 @@ export default function BlogCardList({ post, author }: BlogCardListProps) {
             </Button>
             <Button variant="ghost" size="icon" className="h-8 w-8">
               <MessageCircle className="h-4 w-4" />
-              <span className="ml-1 text-xs">{post.comments.length}</span>
+              <span className="ml-1 text-xs">{post.comments?.length || 0}</span>
             </Button>
             <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleSummarize}>
               <BookOpen className="h-4 w-4" />

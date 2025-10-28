@@ -133,7 +133,7 @@ export default function BlogCard({ post, author }: BlogCardProps) {
             </Button>
             <Button variant="ghost" size="icon" className="h-8 w-8">
               <MessageCircle className="h-4 w-4" />
-              <span className="ml-1 text-xs">{post.comments.length}</span>
+              <span className="ml-1 text-xs">{post.comments?.length || 0}</span>
             </Button>
           </div>
           <div className="flex items-center gap-1">
