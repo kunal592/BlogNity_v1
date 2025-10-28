@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
-import { useTheme } from '@/context/ThemeContext';
+import { useTheme } from 'next-themes';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useToast } from '@/hooks/use-toast';
 import {
@@ -53,7 +53,7 @@ export default function SettingsPage() {
             <RadioGroup value={theme} onValueChange={(value: 'light' | 'dark') => setTheme(value)}>
               <div className="flex items-center space-x-2">
                 <RadioGroupItem value="light" id="light" />
-                <Label htmlFor="light">Light (Purple)</Label>
+                <Label htmlFor="light">Light</Label>
               </div>
               <div className="flex items-center space-x-2">
                 <RadioGroupItem value="dark" id="dark" />
