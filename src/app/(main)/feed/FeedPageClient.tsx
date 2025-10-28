@@ -1,7 +1,7 @@
 'use client';
 
 import type { Post, User } from '@/lib/types';
-import { useAuth } from '@/context/AuthContext';
+import { useAuth } from '@/context/auth-provider';
 import BlogList from '@/app/(main)/home/BlogList';
 import { Card, CardContent } from '@/components/ui/card';
 import { Rss } from 'lucide-react';
