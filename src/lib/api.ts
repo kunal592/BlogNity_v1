@@ -37,6 +37,11 @@ export const getUserProfile = async (userId: string) => {
           post: {
             include: {
               author: true,
+              tags: {
+                include: {
+                  tag: true,
+                },
+              },
             },
           },
         },
