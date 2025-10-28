@@ -85,66 +85,64 @@ export default function BlogCardList({ post, author }: BlogCardListProps) {
   };
 
   return (
-    <Card className="overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300 w-full">
-      <CardContent className="p-4 flex gap-4">
-        <div className="relative w-1/3 md:w-1/4 flex-shrink-0">
-           <Image
-            src={post.thumbnailUrl || '/placeholder.jpg'}
-            alt={post.title}
-            layout="fill"
-            className="object-cover rounded-md"
-            data-ai-hint="blog thumbnail"
-          />
-           {post.isExclusive && (
-            <Badge className="absolute top-2 right-2" variant="destructive">
-                <Gem className="h-3 w-3 mr-1" />
-                Exclusive
-            </Badge>
-            )}
+    <Card className="overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300 w-full flex flex-row">
+      <div className="relative w-1/3 md:w-1/4 flex-shrink-0">
+        <Image
+          src={post.thumbnailUrl || '/placeholder.jpg'}
+          alt={post.title}
+          layout="fill"
+          className="object-cover"
+          data-ai-hint="blog thumbnail"
+        />
+        {post.isExclusive && (
+          <Badge className="absolute top-2 right-2" variant="destructive">
+            <Gem className="h-3 w-3 mr-1" />
+            Exclusive
+          </Badge>
+        )}
+      </div>
+      <CardContent className="p-4 flex-grow flex flex-col">
+        <div className="flex gap-2 mb-2">
+          {post.tags.map(tag => (
+            <Badge key={tag} variant="secondary">{tag}</Badge>
+          ))}
         </div>
-        <div className="flex-grow flex flex-col">
-            <div className="flex gap-2 mb-2">
-                {post.tags.map(tag => (
-                    <Badge key={tag} variant="secondary">{tag}</Badge>
-                ))}
+        <h2 className="text-xl font-bold mb-2 leading-tight">
+          <Link href={`/blog/${post.id}`} className={cn("hover:text-primary transition-colors", post.isExclusive && !user?.hasPaidAccess && "pointer-events-none")}>
+            {post.title}
+          </Link>
+        </h2>
+        <p className="text-muted-foreground text-sm line-clamp-2 mb-4 flex-grow">{post.excerpt}</p>
+        
+        <div className="flex items-center justify-between w-full text-muted-foreground">
+          {author && (
+            <div className="flex items-center gap-2 text-sm">
+              <Avatar className="h-6 w-6">
+                <AvatarImage src={author.avatarUrl || '/user-placeholder.png'} alt={author.name} />
+                <AvatarFallback>{author.name.charAt(0)}</AvatarFallback>
+              </Avatar>
+              <span>{author.name}</span>
+              <span className="hidden md:inline">·</span>
+              <span className="hidden md:inline">{post.publishedAt ? format(new Date(post.publishedAt), 'MMM d, yyyy') : ''}</span>
             </div>
-            <h2 className="text-xl font-bold mb-2 leading-tight">
-                <Link href={`/blog/${post.id}`} className={cn("hover:text-primary transition-colors", post.isExclusive && !user?.hasPaidAccess && "pointer-events-none")}>
-                    {post.title}
-                </Link>
-            </h2>
-            <p className="text-muted-foreground text-sm line-clamp-2 mb-4 flex-grow">{post.excerpt}</p>
-            
-            <div className="flex items-center justify-between w-full text-muted-foreground">
-                {author && (
-                    <div className="flex items-center gap-2 text-sm">
-                        <Avatar className="h-6 w-6">
-                            <AvatarImage src={author.avatarUrl || '/user-placeholder.png'} alt={author.name} />
-                            <AvatarFallback>{author.name.charAt(0)}</AvatarFallback>
-                        </Avatar>
-                        <span>{author.name}</span>
-                        <span className="hidden md:inline">·</span>
-                        <span className="hidden md:inline">{post.publishedAt ? format(new Date(post.publishedAt), 'MMM d, yyyy') : ''}</span>
-                    </div>
-                )}
-                <div className="flex items-center gap-1">
-                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleLike}>
-                        <Heart className={`h-4 w-4 ${isLiked ? 'fill-red-500 text-red-500' : ''}`} />
-                    </Button>
-                    <Button variant="ghost" size="icon" className="h-8 w-8">
-                        <MessageCircle className="h-4 w-4" />
-                    </Button>
-                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleSummarize}>
-                        <BookOpen className="h-4 w-4" />
-                    </Button>
-                    <Button variant="ghost" size="icon" className="h-8 w-8">
-                        <Share2 className="h-4 w-4" />
-                    </Button>
-                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleBookmark}>
-                        <Bookmark className={`h-4 w-4 ${isBookmarked ? 'fill-primary text-primary' : ''}`} />
-                    </Button>
-                </div>
-            </div>
+          )}
+          <div className="flex items-center gap-1">
+            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleLike}>
+              <Heart className={`h-4 w-4 ${isLiked ? 'fill-red-500 text-red-500' : ''}`} />
+            </Button>
+            <Button variant="ghost" size="icon" className="h-8 w-8">
+              <MessageCircle className="h-4 w-4" />
+            </Button>
+            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleSummarize}>
+              <BookOpen className="h-4 w-4" />
+            </Button>
+            <Button variant="ghost" size="icon" className="h-8 w-8">
+              <Share2 className="h-4 w-4" />
+            </Button>
+            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleBookmark}>
+              <Bookmark className={`h-4 w-4 ${isBookmarked ? 'fill-primary text-primary' : ''}`} />
+            </Button>
+          </div>
         </div>
       </CardContent>
     </Card>
