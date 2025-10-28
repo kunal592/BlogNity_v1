@@ -1,0 +1,64 @@
+{
+  "placeholderImages": [
+    {
+      "id": "avatar1",
+      "description": "User avatar 1",
+      "imageUrl": "https://picsum.photos/seed/avatar1/100/100",
+      "imageHint": "person portrait"
+    },
+    {
+      "id": "avatar2",
+      "description": "User avatar 2",
+      "imageUrl": "https://picsum.photos/seed/avatar2/100/100",
+      "imageHint": "person portrait"
+    },
+    {
+      "id": "avatar3",
+      "description": "User avatar 3",
+      "imageUrl": "https://picsum.photos/seed/avatar3/100/100",
+      "imageHint": "person portrait"
+    },
+    {
+      "id": "avatar4",
+      "description": "User avatar 4",
+      "imageUrl": "https://picsum.photos/seed/avatar4/100/100",
+      "imageHint": "person portrait"
+    },
+    {
+      "id": "post1",
+      "description": "Blog post thumbnail 1",
+      "imageUrl": "https://picsum.photos/seed/post1/600/400",
+      "imageHint": "technology abstract"
+    },
+    {
+      "id": "post2",
+      "description": "Blog post thumbnail 2",
+      "imageUrl": "https://picsum.photos/seed/post2/600/400",
+      "imageHint": "nature landscape"
+    },
+    {
+      "id": "post3",
+      "description": "Blog post thumbnail 3",
+      "imageUrl": "https://picsum.photos/seed/post3/600/400",
+      "imageHint": "city architecture"
+    },
+    {
+      "id": "post4",
+      "description": "Blog post thumbnail 4",
+      "imageUrl": "https://picsum.photos/seed/post4/600/400",
+      "imageHint": "food cooking"
+    },
+    {
+      "id": "post5",
+      "description": "Blog post thumbnail 5",
+      "imageUrl": "https://picsum.photos/seed/post5/600/400",
+      "imageHint": "travel destination"
+    },
+    {
+      "id": "post6",
+      "description": "Blog post thumbnail 6",
+      "imageUrl": "https://picsum.photos/seed/post6/600/400",
+      "imageHint": "business office"
+    }
+  ]
+}
