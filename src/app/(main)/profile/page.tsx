@@ -10,20 +10,16 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Edit } from 'lucide-react';
 import BlogCard from '../home/BlogCard';
 import { useRouter } from 'next/navigation';
+import type { User, Post } from '@prisma/client'; // Import User and Post types
 
-// Define a type for the user profile data
-interface UserProfile {
-  id: string;
-  name: string | null;
-  username: string | null;
-  image: string | null;
-  bio: string | null;
+// Define a more specific type for the user profile data
+interface UserProfile extends User {
+  posts: Post[];
+  bookmarkedPosts: Post[];
+  followingUsers: User[];
   postsCount: number;
   followersCount: number;
   followingCount: number;
-  posts: any[]; // Consider creating a specific Post type
-  bookmarkedPosts: any[];
-  followingUsers: any[];
 }
 
 export default function ProfilePage() {
@@ -34,7 +30,7 @@ export default function ProfilePage() {
   useEffect(() => {
     if (status === 'authenticated' && session?.user?.id) {
       getUserProfile(session.user.id).then(data => {
-        setUserProfile(data);
+        setUserProfile(data as UserProfile);
       });
     } else if (status === 'unauthenticated') {
       router.push('/signin');
@@ -82,7 +78,7 @@ export default function ProfilePage() {
         <TabsContent value="blogs" className="mt-6">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {posts.map(post => (
-              <BlogCard key={post.id} post={post} author={userProfile} />
+              <BlogCard key={post.id} post={post} author={userProfile as User} />
             ))}
           </div>
         </TabsContent>

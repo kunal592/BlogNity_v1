@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { useSession } from 'next-auth/react';
 import { useToast } from '@/hooks/use-toast';
-import type { Post, User } from '@/lib/types';
+import type { Post, User } from '@prisma/client';
 import {
   Bookmark,
   Heart,
@@ -28,22 +28,20 @@ interface BlogCardProps {
 
 export default function BlogCard({ post, author }: BlogCardProps) {
   const { data: session } = useSession();
-  const user = session?.user as any; // Cast to access custom properties
+  const user = session?.user as any;
   const { toast } = useToast();
 
   const [isLiked, setIsLiked] = useState(false);
-  const [likes, setLikes] = useState(post.likes);
+  const [likes, setLikes] = useState(post.likesCount || 0);
   const [isBookmarked, setIsBookmarked] = useState(false);
 
   useEffect(() => {
     if (user) {
-      setIsLiked(post.likedBy.includes(user.id));
-      setIsBookmarked(user.bookmarkedPosts?.includes(post.id));
-    } else {
-      setIsLiked(false);
-      setIsBookmarked(false);
+      // This needs to be adapted based on your actual data model
+      // For example, if you have a `user.likedPosts` array:
+      // setIsLiked(user.likedPosts?.some(p => p.id === post.id));
     }
-  }, [user, post.id, post.likedBy]);
+  }, [user, post.id]);
 
 
   const handleLike = async () => {
@@ -54,7 +52,8 @@ export default function BlogCard({ post, author }: BlogCardProps) {
     setLikes(prev => newIsLiked ? prev + 1 : prev - 1);
     
     try {
-      await toggleLike(post.id, user.id);
+      const result = await toggleLike(post.id, user.id);
+      setLikes(result.likesCount);
       toast({ title: newIsLiked ? 'Post liked!' : 'Post unliked' });
     } catch(e) {
       setIsLiked(!newIsLiked);
@@ -78,7 +77,6 @@ export default function BlogCard({ post, author }: BlogCardProps) {
   };
   
   const handleSummarize = () => {
-    // In a real app, this would trigger the AI summary flow.
     toast({
       title: 'AI Summary',
       description: 'This is a mock AI summary of the blog post. It provides a concise overview of the main points.',
@@ -88,14 +86,15 @@ export default function BlogCard({ post, author }: BlogCardProps) {
   return (
     <Card className="flex flex-col overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300">
       <CardHeader className="p-0 relative">
-        <Image
-          src={post.thumbnailUrl}
-          alt={post.title}
-          width={600}
-          height={400}
-          className="object-cover w-full h-48"
-          data-ai-hint="blog thumbnail"
-        />
+        {post.thumbnailUrl && (
+            <Image
+                src={post.thumbnailUrl}
+                alt={post.title}
+                width={600}
+                height={400}
+                className="object-cover w-full h-48"
+            />
+        )}
         {post.isExclusive && (
           <Badge className="absolute top-2 right-2" variant="destructive">
             <Gem className="h-3 w-3 mr-1" />
@@ -105,24 +104,24 @@ export default function BlogCard({ post, author }: BlogCardProps) {
       </CardHeader>
       <CardContent className="p-4 flex-grow">
         <div className="flex gap-2 mb-2">
-          {post.tags.map(tag => (
-            <Badge key={tag} variant="secondary">{tag}</Badge>
+          {(post.tags || []).map(tag => (
+            <Badge key={tag.id} variant="secondary">{tag.name}</Badge>
           ))}
         </div>
         <CardTitle className="text-xl mb-2 leading-tight">
-          <Link href={`/blog/${post.id}`} className={cn("hover:text-primary transition-colors", post.isExclusive && !user?.hasPaidAccess && "pointer-events-none")}>
+          <Link href={`/blog/${post.slug}`} className={cn("hover:text-primary transition-colors", post.isExclusive && "pointer-events-none")}>
             {post.title}
           </Link>
         </CardTitle>
-        <p className="text-muted-foreground text-sm line-clamp-3">{post.excerpt}</p>
+        <p className="text-muted-foreground text-sm line-clamp-3">{post.content.substring(0, 150)}</p>
       </CardContent>
       <CardFooter className="p-4 pt-0 flex flex-col items-start">
         {author && (
           <div className="flex items-center gap-2 mb-4 w-full justify-between">
             <div className="flex items-center gap-2">
               <Avatar className="h-8 w-8">
-                <AvatarImage src={author.avatarUrl} alt={author.name} />
-                <AvatarFallback>{author.name.charAt(0)}</AvatarFallback>
+                {author.image && <AvatarImage src={author.image} alt={author.name || ''} />}
+                <AvatarFallback>{author.name ? author.name.charAt(0) : 'U'}</AvatarFallback>
               </Avatar>
               <span className="text-sm font-medium">{author.name}</span>
             </div>
@@ -137,7 +136,7 @@ export default function BlogCard({ post, author }: BlogCardProps) {
             </Button>
             <Button variant="ghost" size="icon" className="h-8 w-8">
               <MessageCircle className="h-4 w-4" />
-              <span className="ml-1 text-xs">{post.comments.length}</span>
+              <span className="ml-1 text-xs">{post.comments?.length || 0}</span>
             </Button>
           </div>
           <div className="flex items-center gap-1">
