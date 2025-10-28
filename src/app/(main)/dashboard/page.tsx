@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useAuth } from '@/context/AuthContext';
+import { useSession } from 'next-auth/react';
 import { deletePost, getPostsByAuthor } from '@/lib/api';
 import type { Post } from '@/lib/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -9,30 +9,31 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { MoreHorizontal, Eye, Heart, MessageCircle, Edit, Trash2 } from 'lucide-react';
+import { Eye, Heart, MessageCircle, Edit, Trash2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 
 export default function DashboardPage() {
-  const { user } = useAuth();
+  const { data: session, status } = useSession();
+  const user = session?.user;
   const { toast } = useToast();
   const router = useRouter();
   const [posts, setPosts] = useState<Post[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+
+  const isLoading = status === 'loading';
 
   useEffect(() => {
-    if (user) {
+    if (status === 'authenticated' && user?.id) {
       getPostsByAuthor(user.id).then(data => {
         setPosts(data);
-        setIsLoading(false);
       });
     }
-  }, [user]);
+  }, [status, user]);
 
   const handleDelete = async (postId: string) => {
     if (!confirm('Are you sure you want to delete this post?')) return;
-    
+
     const { success } = await deletePost(postId);
     if (success) {
       setPosts(posts.filter(p => p.id !== postId));
@@ -42,19 +43,24 @@ export default function DashboardPage() {
     }
   };
 
-  const publishedPosts = posts.filter(p => p.status === 'published');
-  const draftPosts = posts.filter(p => p.status === 'draft');
-  
-  const totalViews = posts.reduce((sum, p) => sum + p.views, 0);
-  const totalLikes = posts.reduce((sum, p) => sum + p.likes, 0);
-  const totalComments = posts.reduce((sum, p) => sum + p.comments.length, 0);
-
   if (isLoading) {
     return <div>Loading dashboard...</div>;
   }
 
+  if (status === 'unauthenticated') {
+    router.push('/signin');
+    return null;
+  }
+
+  const publishedPosts = posts.filter(p => p.status.toLowerCase() === 'published');
+  const draftPosts = posts.filter(p => p.status.toLowerCase() === 'draft');
+
+  const totalViews = posts.reduce((sum, p) => sum + (p.viewsCount || 0), 0);
+  const totalLikes = posts.reduce((sum, p) => sum + (p.likesCount || 0), 0);
+  const totalComments = posts.reduce((sum, p) => sum + (p.commentsCount || 0), 0);
+
   return (
-    <div className="container mx-auto space-y-8">
+    <div className="container mx-auto space-y-8 py-8">
       <h1 className="text-3xl font-bold">Your Dashboard</h1>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -93,17 +99,17 @@ export default function DashboardPage() {
           <TabsTrigger value="drafts">Drafts ({draftPosts.length})</TabsTrigger>
         </TabsList>
         <TabsContent value="published">
-          <PostTable posts={publishedPosts} onDelete={handleDelete} />
+          <PostTable posts={publishedPosts} onDelete={handleDelete} onEdit={(id) => router.push(`/editor/${id}`)} />
         </TabsContent>
         <TabsContent value="drafts">
-          <PostTable posts={draftPosts} onDelete={handleDelete} />
+          <PostTable posts={draftPosts} onDelete={handleDelete} onEdit={(id) => router.push(`/editor/${id}`)} />
         </TabsContent>
       </Tabs>
     </div>
   );
 }
 
-function PostTable({ posts, onDelete }: { posts: Post[], onDelete: (id: string) => void }) {
+function PostTable({ posts, onDelete, onEdit }: { posts: Post[], onDelete: (id: string) => void, onEdit: (id: string) => void }) {
   return (
     <Card>
       <Table>
@@ -119,10 +125,10 @@ function PostTable({ posts, onDelete }: { posts: Post[], onDelete: (id: string) 
           {posts.map(post => (
             <TableRow key={post.id}>
               <TableCell className="font-medium">{post.title}</TableCell>
-              <TableCell><Badge variant={post.status === 'published' ? 'default' : 'secondary'}>{post.status}</Badge></TableCell>
-              <TableCell>{post.publishedAt ? format(new Date(post.publishedAt), 'MMM d, yyyy') : '-'}</TableCell>
+              <TableCell><Badge variant={post.status.toLowerCase() === 'published' ? 'default' : 'secondary'}>{post.status}</Badge></TableCell>
+              <TableCell>{post.publishedAt ? format(new Date(post.publishedAt), 'MMM d, yyyy') : 'Draft'}</TableCell>
               <TableCell className="text-right">
-                <Button variant="ghost" size="icon" onClick={() => { /* Handle edit */ }}>
+                <Button variant="ghost" size="icon" onClick={() => onEdit(post.id)}>
                   <Edit className="h-4 w-4" />
                 </Button>
                 <Button variant="ghost" size="icon" onClick={() => onDelete(post.id)}>
