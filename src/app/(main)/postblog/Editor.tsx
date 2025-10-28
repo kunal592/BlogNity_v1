@@ -4,7 +4,6 @@ import { useState } from 'react';
 import MDEditor from '@uiw/react-md-editor';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { useTheme } from '@/context/ThemeContext';
 import { useToast } from '@/hooks/use-toast';
 import { createPost } from '@/lib/api';
 import { useSession } from 'next-auth/react';
@@ -14,7 +13,6 @@ import { Loader2, Wand2 } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 
 export default function Editor() {
-  const { theme } = useTheme();
   const { toast } = useToast();
   const { data: session } = useSession();
   const user = session?.user;
@@ -79,7 +77,7 @@ export default function Editor() {
         onChange={(e) => setTitle(e.target.value)}
         className="text-2xl h-14 font-bold"
       />
-      <div data-color-mode={theme}>
+      <div>
         <MDEditor
           value={content}
           onChange={(val) => setContent(val || '')}
