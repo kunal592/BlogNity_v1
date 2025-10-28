@@ -1,7 +1,7 @@
 'use client';
 
 import type { Post, User } from '@/lib/types';
-import { useAuth } from '@/context/auth-provider';
+import { useSession } from 'next-auth/react';
 import BlogList from '@/app/(main)/home/BlogList';
 import { Card, CardContent } from '@/components/ui/card';
 import { Rss } from 'lucide-react';
@@ -11,9 +11,9 @@ interface FeedPageClientProps {
 }
 
 export default function FeedPageClient({ initialPosts }: FeedPageClientProps) {
-  const { user } = useAuth();
+  const { data: session } = useSession();
   
-  if (!user) {
+  if (!session) {
     return (
         <Card className="mt-8">
             <CardContent className="p-8 flex flex-col items-center justify-center text-center">
