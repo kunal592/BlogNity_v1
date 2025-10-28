@@ -129,9 +129,11 @@ export default function BlogCardList({ post, author }: BlogCardListProps) {
           <div className="flex items-center gap-1">
             <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleLike}>
               <Heart className={`h-4 w-4 ${isLiked ? 'fill-red-500 text-red-500' : ''}`} />
+              <span className="ml-1 text-xs">{likes}</span>
             </Button>
             <Button variant="ghost" size="icon" className="h-8 w-8">
               <MessageCircle className="h-4 w-4" />
+              <span className="ml-1 text-xs">{post.comments.length}</span>
             </Button>
             <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleSummarize}>
               <BookOpen className="h-4 w-4" />
