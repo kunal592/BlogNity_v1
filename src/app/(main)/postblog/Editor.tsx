@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { useTheme } from '@/context/ThemeContext';
 import { useToast } from '@/hooks/use-toast';
 import { createPost } from '@/lib/api';
-import { useAuth } from '@/context/AuthContext';
+import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { aiSEOBlog } from '@/ai/flows/ai-seo-blog';
 import { Loader2, Wand2 } from 'lucide-react';
@@ -16,7 +16,8 @@ import { Textarea } from '@/components/ui/textarea';
 export default function Editor() {
   const { theme } = useTheme();
   const { toast } = useToast();
-  const { user } = useAuth();
+  const { data: session } = useSession();
+  const user = session?.user;
   const router = useRouter();
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('**Hello world!!!**');
