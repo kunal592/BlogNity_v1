@@ -178,10 +178,10 @@ export const deletePost = async (postId: string): Promise<{ success: boolean }> 
 export const getNotifications = async (userId: string) => {
     return prisma.notification.findMany({
       where: {
-        userId,
+        recipientId: userId,
       },
       include: {
-        fromUser: true,
+        actor: true,
         post: true,
       },
       orderBy: {

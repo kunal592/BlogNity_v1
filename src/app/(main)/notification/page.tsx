@@ -40,7 +40,7 @@ export default function NotificationPage() {
 
 
   const getNotificationText = (notification: any) => {
-    const fromUser = notification.fromUser;
+    const fromUser = notification.actor;
     if (!fromUser) return 'An action occurred.';
     switch (notification.type) {
         case 'NEW_FOLLOWER':
@@ -68,7 +68,7 @@ export default function NotificationPage() {
           {notifications.length > 0 ? (
             <ul className="divide-y">
               {notifications.map(notification => {
-                 const fromUser = notification.fromUser;
+                 const fromUser = notification.actor;
                  const notificationLink = notification.post ? `/blog/${notification.post.slug}` : (fromUser ? `/profile/${fromUser.id}`: '#');
 
                 return (
