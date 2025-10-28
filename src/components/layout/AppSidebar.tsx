@@ -10,7 +10,7 @@ import {
   SidebarSeparator,
 } from '@/components/ui/sidebar';
 import { Logo } from '@/components/shared/Logo';
-import { useAuth } from '@/context/AuthContext';
+import { useSession } from 'next-auth/react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import type { NavItem } from '@/lib/types';
@@ -48,7 +48,8 @@ const userNavItems: NavItem[] = [
 const adminNavItem: NavItem = { href: '/admin', title: 'Admin', icon: Shield };
 
 export default function AppSidebar() {
-  const { user } = useAuth();
+  const { data: session } = useSession();
+  const user = session?.user as any; // Using any to access role
   const pathname = usePathname();
 
   const isActive = (href: string) => pathname === href;
@@ -74,33 +75,39 @@ export default function AppSidebar() {
             </SidebarMenuItem>
           ))}
         </SidebarMenu>
-        <SidebarSeparator />
-        <SidebarMenu>
-          {userNavItems.map((item) => (
-             <SidebarMenuItem key={item.href}>
-               <Link href={item.href}>
-                 <SidebarMenuButton
-                  isActive={isActive(item.href)}
-                  tooltip={{ children: item.title }}
-                 >
-                   <item.icon />
-                   <span>{item.title}</span>
-                 </SidebarMenuButton>
-               </Link>
-             </SidebarMenuItem>
-          ))}
-          <SidebarMenuItem>
-            <Link href={adminNavItem.href}>
-              <SidebarMenuButton
-                isActive={isActive(adminNavItem.href)}
-                tooltip={{ children: adminNavItem.title }}
-              >
-                <adminNavItem.icon />
-                <span>{adminNavItem.title}</span>
-              </SidebarMenuButton>
-            </Link>
-          </SidebarMenuItem>
-        </SidebarMenu>
+        {user && (
+            <>
+                <SidebarSeparator />
+                <SidebarMenu>
+                {userNavItems.map((item) => (
+                    <SidebarMenuItem key={item.href}>
+                    <Link href={item.href}>
+                        <SidebarMenuButton
+                        isActive={isActive(item.href)}
+                        tooltip={{ children: item.title }}
+                        >
+                        <item.icon />
+                        <span>{item.title}</span>
+                        </SidebarMenuButton>
+                    </Link>
+                    </SidebarMenuItem>
+                ))}
+                {user.role === 'admin' && (
+                    <SidebarMenuItem>
+                        <Link href={adminNavItem.href}>
+                        <SidebarMenuButton
+                            isActive={isActive(adminNavItem.href)}
+                            tooltip={{ children: adminNavItem.title }}
+                        >
+                            <adminNavItem.icon />
+                            <span>{adminNavItem.title}</span>
+                        </SidebarMenuButton>
+                        </Link>
+                    </SidebarMenuItem>
+                )}
+                </SidebarMenu>
+            </>
+        )}
       </SidebarContent>
       <SidebarFooter>
         <ThemeToggle />
