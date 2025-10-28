@@ -255,34 +255,14 @@ export const toggleLike = async (postId: string, userId: string) => {
 };
   
   export const toggleBookmark = async (postId: string, userId: string) => {
-    const existingBookmark = await prisma.bookmark.findUnique({
-      where: {
-        userId_postId: {
-          userId,
-          postId,
+    const res = await fetch('/api/posts/bookmark', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
         },
-      },
+        body: JSON.stringify({ postId, userId }),
     });
-  
-    if (existingBookmark) {
-      await prisma.bookmark.delete({
-        where: {
-          userId_postId: {
-            userId,
-            postId,
-          },
-        },
-      });
-      return { bookmarked: false };
-    } else {
-      await prisma.bookmark.create({
-        data: {
-          userId,
-          postId,
-        },
-      });
-      return { bookmarked: true };
-    }
+    return res.json();
   };
 
 export const getContactMessages = async (): Promise<ContactMessage[]> => {
