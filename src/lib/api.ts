@@ -174,6 +174,22 @@ export const deletePost = async (postId: string): Promise<{ success: boolean }> 
     }
 };
 
+// --- NOTIFICATION API ---
+export const getNotifications = async (userId: string) => {
+    return prisma.notification.findMany({
+      where: {
+        userId,
+      },
+      include: {
+        fromUser: true,
+        post: true,
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
+  };
+
 // --- INTERACTIONS ---
 export const toggleLike = async (postId: string, userId: string) => {
     const existingLike = await prisma.like.findUnique({
