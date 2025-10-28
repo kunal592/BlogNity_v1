@@ -10,27 +10,32 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Edit } from 'lucide-react';
 import BlogCard from '../home/BlogCard';
 import { useRouter } from 'next/navigation';
-import type { User, Post } from '@prisma/client'; // Import User and Post types
+import type { User, Post } from '@prisma/client';
 
-// Define a more specific type for the user profile data
-interface UserProfile extends User {
-  posts: Post[];
-  bookmarkedPosts: Post[];
-  followingUsers: User[];
-  postsCount: number;
-  followersCount: number;
-  followingCount: number;
+// Define a type for the user profile data that matches the API response
+interface Profile {
+    id: string;
+    name: string | null;
+    username: string | null;
+    image: string | null;
+    bio: string | null;
+    postsCount: number;
+    followersCount: number;
+    followingCount: number;
+    posts: Post[];
+    bookmarkedPosts: (Post & { author: User })[];
+    followingUsers: User[];
 }
 
 export default function ProfilePage() {
   const { data: session, status } = useSession();
   const router = useRouter();
-  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+  const [userProfile, setUserProfile] = useState<Profile | null>(null);
 
   useEffect(() => {
     if (status === 'authenticated' && session?.user?.id) {
       getUserProfile(session.user.id).then(data => {
-        setUserProfile(data as UserProfile);
+        setUserProfile(data);
       });
     } else if (status === 'unauthenticated') {
       router.push('/signin');
@@ -78,7 +83,7 @@ export default function ProfilePage() {
         <TabsContent value="blogs" className="mt-6">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {posts.map(post => (
-              <BlogCard key={post.id} post={post} author={userProfile as User} />
+              <BlogCard key={post.id} post={post} author={userProfile as any} />
             ))}
           </div>
         </TabsContent>
@@ -96,7 +101,7 @@ export default function ProfilePage() {
                         <CardContent className="p-4 flex items-center justify-between">
                             <div className="flex items-center gap-4">
                                 <Avatar>
-                                    {followedUser.image && <AvatarImage src={followedUser.image} alt={followedUser.name} />}
+                                    {followedUser.image && <AvatarImage src={followedUser.image} alt={followedUser.name || ''} />}
                                     <AvatarFallback>{followedUser.name ? followedUser.name.charAt(0) : 'U'}</AvatarFallback>
                                 </Avatar>
                                 <div>

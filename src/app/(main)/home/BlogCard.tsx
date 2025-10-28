@@ -22,7 +22,7 @@ import { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
 
 interface BlogCardProps {
-  post: Post;
+  post: Post & { tags: any[], comments: any[] };
   author?: User;
 }
 
