@@ -3,6 +3,7 @@ import AppSidebar from '@/components/layout/AppSidebar';
 import { SidebarProvider, Sidebar, SidebarInset } from '@/components/ui/sidebar';
 import { MotionDiv } from '@/components/shared/MotionDiv';
 import { ThemeProvider } from '@/components/theme-provider';
+import { AuthProvider } from '@/context/auth-provider';
 
 export default function MainLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -12,6 +13,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
         enableSystem
         disableTransitionOnChange
     >
+      <AuthProvider>
         <SidebarProvider>
         <div className="flex h-screen w-full">
             <Sidebar>
@@ -31,6 +33,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
             </SidebarInset>
         </div>
         </SidebarProvider>
+      </AuthProvider>
     </ThemeProvider>
   );
 }
