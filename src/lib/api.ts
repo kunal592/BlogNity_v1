@@ -1,6 +1,6 @@
 'use server';
 
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, EntityType } from '@prisma/client';
 import type { Post, User } from '@prisma/client';
 
 const prisma = new PrismaClient();
@@ -176,18 +176,32 @@ export const deletePost = async (postId: string): Promise<{ success: boolean }> 
 
 // --- NOTIFICATION API ---
 export const getNotifications = async (userId: string) => {
-    return prisma.notification.findMany({
+    const notifications = await prisma.notification.findMany({
       where: {
         recipientId: userId,
       },
       include: {
         actor: true,
-        post: true,
       },
       orderBy: {
         createdAt: 'desc',
       },
     });
+  
+    const notificationsWithPosts = await Promise.all(
+      notifications.map(async (notification) => {
+        if (notification.entityType === EntityType.POST && notification.entityId) {
+          const post = await prisma.post.findUnique({
+            where: { id: notification.entityId },
+            select: { slug: true },
+          });
+          return { ...notification, post };
+        }
+        return notification;
+      })
+    );
+  
+    return notificationsWithPosts;
   };
 
 // --- INTERACTIONS ---
