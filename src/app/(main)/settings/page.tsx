@@ -1,5 +1,6 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
@@ -20,8 +21,13 @@ import {
 } from '@/components/ui/alert-dialog';
 
 export default function SettingsPage() {
+  const [mounted, setMounted] = useState(false);
   const { theme, setTheme } = useTheme();
   const { toast } = useToast();
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const handleExportData = () => {
     toast({
@@ -50,16 +56,18 @@ export default function SettingsPage() {
         <CardContent>
           <div className="grid gap-4">
             <Label>Theme</Label>
-            <RadioGroup value={theme} onValueChange={(value: 'light' | 'dark') => setTheme(value)}>
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="light" id="light" />
-                <Label htmlFor="light">Light</Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="dark" id="dark" />
-                <Label htmlFor="dark">Dark</Label>
-              </div>
-            </RadioGroup>
+            {mounted && (
+                <RadioGroup value={theme} onValueChange={setTheme}>
+                <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="light" id="light" />
+                    <Label htmlFor="light">Light</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="dark" id="dark" />
+                    <Label htmlFor="dark">Dark</Label>
+                </div>
+                </RadioGroup>
+            )}
           </div>
         </CardContent>
       </Card>
