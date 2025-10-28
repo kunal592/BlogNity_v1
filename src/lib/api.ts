@@ -1,7 +1,9 @@
+
 'use server';
 
-import { PrismaClient, EntityType } from '@prisma/client';
+import { PrismaClient, EntityType, ContactMessage } from '@prisma/client';
 import type { Post, User } from '@prisma/client';
+import nodemailer from 'nodemailer';
 
 const prisma = new PrismaClient();
 
@@ -69,9 +71,12 @@ export const getUsers = async (): Promise<User[]> => {
 
 
 // --- POST API ---
-export const getPosts = async (): Promise<any[]> => {
+export const getPosts = async (options?: { isExclusive?: boolean }): Promise<any[]> => {
     return prisma.post.findMany({
-      where: { status: 'PUBLISHED' },
+      where: { 
+        status: 'PUBLISHED',
+        isExclusive: options?.isExclusive
+      },
       include: {
         author: true,
         tags: { include: { tag: true } },
@@ -121,8 +126,8 @@ const generateSlug = (title: string) => {
       .replace(/(^-|-$)+/g, '');
 };
 
-export const createPost = async (postData: { title: string; content: string; status: 'DRAFT' | 'PUBLISHED', visibility: 'PUBLIC' | 'PRIVATE' }, authorId: string): Promise<Post> => {
-    const { title, content, status, visibility } = postData;
+export const createPost = async (postData: { title: string; content: string; status: 'DRAFT' | 'PUBLISHED', visibility: 'PUBLIC' | 'PRIVATE', isExclusive: boolean, tags?: string[] }, authorId: string): Promise<Post> => {
+    const { title, content, status, visibility, isExclusive, tags = [] } = postData;
     let slug = generateSlug(title);
 
     const existingPost = await prisma.post.findUnique({ where: { slug }});
@@ -130,21 +135,44 @@ export const createPost = async (postData: { title: string; content: string; sta
         slug = `${slug}-${Date.now()}`;
     }
 
-    return prisma.post.create({
+    const post = await prisma.post.create({
         data: {
             title,
             content,
             slug,
             status,
             visibility,
+            isExclusive,
             authorId,
             publishedAt: status === 'PUBLISHED' ? new Date() : null,
         }
     });
+
+    if (tags && tags.length > 0) {
+        const tagOperations = tags.map(async (tagName) => {
+            const formattedTagName = tagName.trim().toLowerCase();
+            const tagSlug = generateSlug(formattedTagName);
+            const tag = await prisma.tag.upsert({
+                where: { slug: tagSlug },
+                update: {},
+                create: { name: formattedTagName, slug: tagSlug },
+            });
+
+            await prisma.postTag.create({
+                data: {
+                    postId: post.id,
+                    tagId: tag.id,
+                },
+            });
+        });
+        await Promise.all(tagOperations);
+    }
+
+    return post;
 };
 
 export const updatePost = async (postId: string, updateData: any): Promise<Post | undefined> => {
-    const { title, content, status, visibility } = updateData;
+    const { title, content, status, visibility, isExclusive } = updateData;
     let slug = updateData.slug;
     if (title && !slug) {
         slug = generateSlug(title);
@@ -158,6 +186,7 @@ export const updatePost = async (postId: string, updateData: any): Promise<Post 
             slug,
             status,
             visibility,
+            isExclusive,
             updatedAt: new Date(),
             publishedAt: (await prisma.post.findUnique({where: {id: postId}}))?.status !== 'PUBLISHED' && status === 'PUBLISHED' ? new Date() : undefined,
         }
@@ -275,7 +304,56 @@ export const toggleLike = async (postId: string, userId: string) => {
     }
   };
 
-  export const sendContactMessage = async (formData: { name: string; email: string; message: string; }) => {
-    console.log('Contact message received:', formData);
-    return { success: true };
+export const getContactMessages = async (): Promise<ContactMessage[]> => {
+    return prisma.contactMessage.findMany({
+      orderBy: { createdAt: 'desc' },
+    });
+  };
+
+export const sendContactMessage = async (formData: { name: string; email: string; message: string; }) => {
+    try {
+        await prisma.contactMessage.create({
+            data: {
+                name: formData.name,
+                email: formData.email,
+                message: formData.message,
+            },
+        });
+
+        const transporter = nodemailer.createTransport({
+            host: process.env.EMAIL_HOST || 'smtp.example.com',
+            port: Number(process.env.EMAIL_PORT) || 587,
+            secure: process.env.EMAIL_SECURE === 'true',
+            auth: {
+                user: process.env.EMAIL_USER || 'user@example.com',
+                pass: process.env.EMAIL_PASS || 'password',
+            },
+        });
+
+        await transporter.sendMail({
+            from: `"${formData.name}" <${formData.email}>`,
+            to: process.env.CONTACT_EMAIL || 'contact@example.com',
+            subject: 'New Contact Form Message',
+            text: formData.message,
+            html: `<p>${formData.message}</p>`,
+        });
+
+        return { success: true };
+    } catch (error) {
+        console.error(error);
+        return { success: false };
+    }
+};
+
+export const resolveContactMessage = async (id: string): Promise<{ success: boolean }> => {
+    try {
+        await prisma.contactMessage.update({
+            where: { id },
+            data: { status: 'resolved' },
+        });
+        return { success: true };
+    } catch (error) {
+        console.error(error);
+        return { success: false };
+    }
 };

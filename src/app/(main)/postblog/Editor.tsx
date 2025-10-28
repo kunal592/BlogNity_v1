@@ -23,7 +23,7 @@ export default function Editor() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isOptimizing, setIsOptimizing] = useState(false);
 
-  const handleSave = async (status: 'draft' | 'published') => {
+  const handleSave = async (status: 'DRAFT' | 'PUBLISHED') => {
     if (!user) {
       toast({ title: 'You must be logged in to post.', variant: 'destructive' });
       return;
@@ -37,13 +37,12 @@ export default function Editor() {
       await createPost({
         title,
         content,
-        authorId: user.id,
         status,
+        visibility: 'PUBLIC',
+        isExclusive: false,
         tags: tags.split(',').map(t => t.trim()).filter(Boolean),
-        excerpt: content.substring(0, 150) + '...',
-        thumbnailUrl: `https://picsum.photos/seed/${Date.now()}/600/400`,
-      });
-      toast({ title: `Post ${status === 'draft' ? 'saved as draft' : 'published'}!` });
+      }, user.id);
+      toast({ title: `Post ${status === 'DRAFT' ? 'saved as draft' : 'published'}!` });
       router.push('/dashboard');
     } catch (error) {
       toast({ title: 'Failed to save post.', variant: 'destructive' });
@@ -101,14 +100,14 @@ export default function Editor() {
         </Button>
         <Button 
           variant="secondary" 
-          onClick={() => handleSave('draft')}
+          onClick={() => handleSave('DRAFT')}
           disabled={isSubmitting}
         >
           {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
           Save Draft
         </Button>
         <Button 
-          onClick={() => handleSave('published')}
+          onClick={() => handleSave('PUBLISHED')}
           disabled={isSubmitting}
         >
           {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
