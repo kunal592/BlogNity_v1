@@ -6,7 +6,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { useAuth } from '@/context/AuthContext';
+import { useSession } from 'next-auth/react';
 import { useToast } from '@/hooks/use-toast';
 import type { Post, User } from '@/lib/types';
 import {
@@ -18,7 +18,7 @@ import {
   Gem,
 } from 'lucide-react';
 import { toggleBookmark, toggleLike } from '@/lib/api';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
 
 interface BlogCardProps {
@@ -27,29 +27,54 @@ interface BlogCardProps {
 }
 
 export default function BlogCard({ post, author }: BlogCardProps) {
-  const { user, refetchUser } = useAuth();
+  const { data: session } = useSession();
+  const user = session?.user as any; // Cast to access custom properties
   const { toast } = useToast();
-  const [isLiked, setIsLiked] = useState(user ? post.likedBy.includes(user.id) : false);
+
+  const [isLiked, setIsLiked] = useState(false);
   const [likes, setLikes] = useState(post.likes);
-  const [isBookmarked, setIsBookmarked] = useState(user ? user.bookmarkedPosts.includes(post.id) : false);
+  const [isBookmarked, setIsBookmarked] = useState(false);
+
+  useEffect(() => {
+    if (user) {
+      setIsLiked(post.likedBy.includes(user.id));
+      setIsBookmarked(user.bookmarkedPosts?.includes(post.id));
+    } else {
+      setIsLiked(false);
+      setIsBookmarked(false);
+    }
+  }, [user, post.id, post.likedBy]);
+
 
   const handleLike = async () => {
     if (!user) return toast({ title: 'Please log in to like posts.', variant: 'destructive' });
     
-    setIsLiked(!isLiked);
-    setLikes(prev => isLiked ? prev - 1 : prev + 1);
+    const newIsLiked = !isLiked;
+    setIsLiked(newIsLiked);
+    setLikes(prev => newIsLiked ? prev + 1 : prev - 1);
     
-    await toggleLike(post.id, user.id);
-    toast({ title: isLiked ? 'Post unliked' : 'Post liked!' });
+    try {
+      await toggleLike(post.id, user.id);
+      toast({ title: newIsLiked ? 'Post liked!' : 'Post unliked' });
+    } catch(e) {
+      setIsLiked(!newIsLiked);
+      setLikes(prev => newIsLiked ? prev - 1 : prev + 1);
+      toast({ title: 'Something went wrong', variant: 'destructive' });
+    }
   };
 
   const handleBookmark = async () => {
     if (!user) return toast({ title: 'Please log in to bookmark posts.', variant: 'destructive' });
 
-    setIsBookmarked(!isBookmarked);
-    await toggleBookmark(post.id, user.id);
-    refetchUser(); // update user context
-    toast({ title: isBookmarked ? 'Bookmark removed' : 'Post bookmarked!' });
+    const newIsBookmarked = !isBookmarked;
+    setIsBookmarked(newIsBookmarked);
+    try {
+      await toggleBookmark(post.id, user.id);
+      toast({ title: newIsBookmarked ? 'Post bookmarked!' : 'Bookmark removed' });
+    } catch(e) {
+      setIsBookmarked(!newIsBookmarked);
+      toast({ title: 'Something went wrong', variant: 'destructive' });
+    }
   };
   
   const handleSummarize = () => {
@@ -97,7 +122,7 @@ export default function BlogCard({ post, author }: BlogCardProps) {
             <div className="flex items-center gap-2">
               <Avatar className="h-8 w-8">
                 <AvatarImage src={author.avatarUrl} alt={author.name} />
-                <AvatarFallback>{author.name.charAt(0)}</AvatarFallback>
+                <AvatarFallback>{author.name.charAt(0)}</Fallback>
               </Avatar>
               <span className="text-sm font-medium">{author.name}</span>
             </div>
