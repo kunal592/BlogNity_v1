@@ -5,12 +5,12 @@ import { authOptions } from "../../../auth/[...nextauth]/route";
 
 export async function GET(
   req: Request,
-  { params }: { params: { postId: string } }
+  { params }: { params: { id: string } }
 ) {
   try {
     const comments = await db.comment.findMany({
       where: {
-        postId: params.postId,
+        postId: params.id,
       },
       include: {
         author: true,
@@ -28,7 +28,7 @@ export async function GET(
 
 export async function POST(
     req: Request,
-    { params }: { params: { postId: string } }
+    { params }: { params: { id: string } }
 ) {
     try {
         const session = await getServerSession(authOptions);
@@ -40,7 +40,7 @@ export async function POST(
         const { content } = await req.json();
 
         const post = await db.post.findUnique({
-            where: { id: params.postId },
+            where: { id: params.id },
         });
 
         if (!post) {
@@ -50,7 +50,7 @@ export async function POST(
         const newComment = await db.comment.create({
             data: {
                 content,
-                postId: params.postId,
+                postId: params.id,
                 authorId: session.user.id,
             },
         });
