@@ -265,6 +265,17 @@ export const toggleLike = async (postId: string, userId: string) => {
     return res.json();
   };
 
+  export const toggleFollow = async (followingId: string) => {
+    const res = await fetch('/api/users/follow', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ followingId }),
+    });
+    return res.json();
+};
+
 export const getContactMessages = async (): Promise<ContactMessage[]> => {
     return prisma.contactMessage.findMany({
       orderBy: { createdAt: 'desc' },
