@@ -18,14 +18,20 @@ export default function HomePage() {
         // Fetch public posts
         fetch('/api/posts/public')
             .then(res => res.json())
-            .then(data => setPublicPosts(data))
-            .catch(error => console.error('Failed to fetch public posts:', error));
+            .then(data => setPublicPosts(data || [])) // Initialize with an empty array if data is null/undefined
+            .catch(error => {
+                console.error('Failed to fetch public posts:', error);
+                setPublicPosts([]); // Set to empty array on error
+            });
 
         // Fetch trending posts
         fetch('/api/posts/trending')
             .then(res => res.json())
-            .then(data => setTrendingPosts(data))
-            .catch(error => console.error('Failed to fetch trending posts:', error));
+            .then(data => setTrendingPosts(data || [])) // Initialize with an empty array if data is null/undefined
+            .catch(error => {
+                console.error('Failed to fetch trending posts:', error);
+                setTrendingPosts([]); // Set to empty array on error
+            });
     }, []);
 
     return (
