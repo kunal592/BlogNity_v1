@@ -1,4 +1,3 @@
-
 'use server';
 
 import { PrismaClient, EntityType, NotificationType, ContactMessage } from '@prisma/client';
@@ -365,7 +364,7 @@ export const toggleBookmark = async (postId: string, userId: string) => {
     });
 
     if (existingBookmark) {
-        await prisma.bookmark.delete({ where: { id: existingBookmark.id } });
+        await prisma.bookmark.delete({ where: { userId_postId: { userId, postId } } });
     } else {
         await prisma.bookmark.create({ data: { userId, postId } });
     }
