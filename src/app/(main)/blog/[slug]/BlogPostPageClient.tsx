@@ -34,7 +34,8 @@ export default function BlogPostPageClient({ post: initialPost }: BlogPostPageCl
     useEffect(() => {
         if (status === 'authenticated' && session?.user?.id) {
             setIsLiked(post.likedBy?.includes(session.user.id) || false);
-            // Add bookmark and following status checks here
+            setIsBookmarked(post.bookmarkedBy?.includes(session.user.id) || false);
+            // Add following status checks here
         }
     }, [session, status, post]);
 

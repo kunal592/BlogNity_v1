@@ -10,6 +10,19 @@ import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 
 const prisma = new PrismaClient();
 
+// --- HELPERS ---
+const transformPost = (post: any) => {
+    const likedBy = post.likes.map((like: any) => like.userId);
+    const bookmarkedBy = post.bookmarks?.map((bookmark: any) => bookmark.userId) || [];
+    const { likes, bookmarks, ...restOfPost } = post;
+    return {
+        ...restOfPost,
+        likedBy,
+        bookmarkedBy,
+    };
+};
+
+
 // --- USER API ---
 export const getTopAuthors = async () => {
   const authors = await prisma.user.findMany({
@@ -105,16 +118,20 @@ export const getUsers = async (): Promise<User[]> => {
 
 // --- POST API ---
 export const getPosts = async (): Promise<any[]> => {
-    return prisma.post.findMany({
+    const posts = await prisma.post.findMany({
       where: { 
         status: 'PUBLISHED',
       },
       include: {
         author: true,
         tags: { include: { tag: true } },
+        likes: { select: { userId: true } },
+        bookmarks: { select: { userId: true } },
       },
       orderBy: { publishedAt: 'desc' },
     });
+
+    return posts.map(transformPost);
   };
 
 export const getPost = async (slug: string): Promise<any | null> => {
@@ -128,11 +145,8 @@ export const getPost = async (slug: string): Promise<any | null> => {
                 where: { parentId: null },
                 orderBy: { createdAt: 'desc' },
             },
-            likes: {
-                select: {
-                    userId: true,
-                },
-            },
+            likes: { select: { userId: true } },
+            bookmarks: { select: { userId: true } },
         },
     });
 
@@ -142,13 +156,7 @@ export const getPost = async (slug: string): Promise<any | null> => {
             data: { viewsCount: { increment: 1 } },
         });
 
-        const likedBy = post.likes.map((like) => like.userId);
-        const { likes, ...restOfPost } = post;
-
-        return {
-            ...restOfPost,
-            likedBy,
-        };
+        return transformPost(post);
     }
 
     return null;
@@ -297,6 +305,9 @@ export const getNotifications = async (userId: string) => {
 
 // --- INTERACTIONS ---
 export const toggleLike = async (postId: string, userId: string) => {
+    const post = await prisma.post.findUnique({ where: { id: postId } });
+    if (!post) throw new Error('Post not found');
+
     const existingLike = await prisma.like.findUnique({
         where: { userId_postId: { userId, postId } },
     });
@@ -306,10 +317,15 @@ export const toggleLike = async (postId: string, userId: string) => {
     } else {
         await prisma.like.create({ data: { userId, postId } });
     }
-    revalidatePath(`/blog/[slug]`);
+
+    revalidatePath('/');
+    revalidatePath(`/blog/${post.slug}`);
 };
   
 export const toggleBookmark = async (postId: string, userId: string) => {
+    const post = await prisma.post.findUnique({ where: { id: postId } });
+    if (!post) throw new Error('Post not found');
+
     const existingBookmark = await prisma.bookmark.findUnique({
         where: { userId_postId: { userId, postId } },
     });
@@ -319,7 +335,8 @@ export const toggleBookmark = async (postId: string, userId: string) => {
     } else {
         await prisma.bookmark.create({ data: { userId, postId } });
     }
-    revalidatePath(`/blog/[slug]`);
+    revalidatePath('/');
+    revalidatePath(`/blog/${post.slug}`);
 };
 
 export const toggleFollow = async (followingId: string) => {
@@ -336,7 +353,7 @@ export const toggleFollow = async (followingId: string) => {
     } else {
         await prisma.follow.create({ data: { followerId, followingId } });
     }
-    revalidatePath(`/blog/[slug]`);
+    revalidatePath('/');
 };
 
 export const getContactMessages = async (): Promise<ContactMessage[]> => {
