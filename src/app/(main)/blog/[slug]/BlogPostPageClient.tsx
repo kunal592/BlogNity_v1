@@ -33,8 +33,7 @@ export default function BlogPostPageClient({ post: initialPost }: BlogPostPageCl
 
     useEffect(() => {
         if (status === 'authenticated' && session?.user?.id) {
-            // These would ideally be checked against the user state from a context
-            setIsLiked(post.likedBy.includes(session.user.id));
+            setIsLiked(post.likedBy?.includes(session.user.id) || false);
             // Add bookmark and following status checks here
         }
     }, [session, status, post]);
@@ -95,11 +94,11 @@ export default function BlogPostPageClient({ post: initialPost }: BlogPostPageCl
                     <div className="flex items-center gap-4">
                         <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleLike}>
                         <Heart className={`h-4 w-4 ${isLiked ? 'fill-red-500 text-red-500' : ''}`} />
-                        <span className="ml-1 text-xs">{post.likedBy.length}</span>
+                        <span className="ml-1 text-xs">{post.likedBy?.length || 0}</span>
                         </Button>
                         <Button variant="ghost" size="icon" className="h-8 w-8">
                         <MessageCircle className="h-4 w-4" />
-                        <span className="ml-1 text-xs">{post.comments.length}</span>
+                        <span className="ml-1 text-xs">{post.comments?.length || 0}</span>
                         </Button>
                     </div>
                     <div className="flex items-center gap-1">
@@ -117,7 +116,7 @@ export default function BlogPostPageClient({ post: initialPost }: BlogPostPageCl
 
                 <hr className="my-12" />
 
-                <CommentSection postId={post.id} comments={post.comments} onCommentAdded={refetchPost}/>
+                <CommentSection postId={post.id} comments={post.comments || []} onCommentAdded={refetchPost}/>
 
             </article>
         </div>

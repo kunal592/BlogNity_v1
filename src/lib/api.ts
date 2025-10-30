@@ -118,13 +118,18 @@ export const getPost = async (slug: string): Promise<any | null> => {
     const post = await prisma.post.findUnique({
         where: { slug },
         include: {
-        author: true,
-        tags: { include: { tag: true } },
-        comments: {
-            include: { author: true },
-            where: { parentId: null },
-            orderBy: { createdAt: 'desc' },
-        },
+            author: true,
+            tags: { include: { tag: true } },
+            comments: {
+                include: { author: true },
+                where: { parentId: null },
+                orderBy: { createdAt: 'desc' },
+            },
+            likes: {
+                select: {
+                    userId: true,
+                },
+            },
         },
     });
 
@@ -133,9 +138,17 @@ export const getPost = async (slug: string): Promise<any | null> => {
             where: { slug },
             data: { viewsCount: { increment: 1 } },
         });
+
+        const likedBy = post.likes.map((like) => like.userId);
+        const { likes, ...restOfPost } = post;
+
+        return {
+            ...restOfPost,
+            likedBy,
+        };
     }
 
-    return post;
+    return null;
 };
 
 export const getPostsByAuthor = async (authorId: string) => {
