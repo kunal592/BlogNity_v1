@@ -3,7 +3,7 @@ import { getPost } from '@/lib/api';
 import { notFound, redirect } from 'next/navigation';
 import type { Metadata } from 'next';
 import BlogPostPageClient from './BlogPostPageClient';
-import { auth } from '@/auth';
+import { auth } from '@/lib/auth';
 
 // Revalidate the page every hour
 export const revalidate = 3600;

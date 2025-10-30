@@ -1,4 +1,125 @@
-\'use client\';\n\nimport { Avatar, AvatarFallback, AvatarImage } from \'@/components/ui/avatar\';\nimport MDEditor from \'@uiw/react-md-editor\';\nimport { format } from \'date-fns\';\nimport CommentSection from \'./CommentSection\';\nimport { Post, User } from \'@/lib/types\';\nimport { Button } from \'@/components/ui/button\';\nimport {\n  Bookmark,\n  Heart,\n  MessageCircle,\n  Share2,\n  BookOpen,\n} from \'lucide-react\';\nimport { useSession } from \'next-auth/react\';\nimport { useState, useEffect } from \'react\';\nimport { toggleBookmark, toggleLike, toggleFollow } from \'@/lib/api\';\nimport { useRouter } from \'next/navigation\';\n\ninterface BlogPostPageClientProps {\n    post: Post & { author: User };\n}\n\nexport default function BlogPostPageClient({ post: initialPost }: BlogPostPageClientProps) {\n    const { data: session, status } = useSession();\n    const router = useRouter();\n    const [post, setPost] = useState(initialPost);\n\n    const [isLiked, setIsLiked] = useState(false);\n    const [isBookmarked, setIsBookmarked] = useState(false);\n    const [isFollowing, setIsFollowing] = useState(false);\n\n    useEffect(() => {\n        if (status === \'authenticated\' && session?.user?.id) {\n            // These would ideally be checked against the user state from a context\n            setIsLiked(post.likedBy.includes(session.user.id));\n            // Add bookmark and following status checks here\n        }\n    }, [session, status, post]);\n\n    const handleLike = async () => {\n        if (!session) return router.push(\'/signin\');\n        await toggleLike(post.id, session.user.id);\n        setIsLiked(!isLiked);\n    };\n\n    const handleBookmark = async () => {\n        if (!session) return router.push(\'/signin\');\n        await toggleBookmark(post.id, session.user.id);\n        setIsBookmarked(!isBookmarked);\n    };\n\n    const handleFollow = async () => {\n        if (!session) return router.push(\'/signin\');\n        await toggleFollow(post.author.id);\n        setIsFollowing(!isFollowing);\n    };\n\n    const refetchPost = async () => {\n        const res = await fetch(`/api/posts/${post.slug}`);\n        if(res.ok) {\n            const newPost = await res.json();\n            setPost(newPost);\n        }\n    };\n\n    return (\n        <div className=\"container mx-auto py-8\">\n            <article className=\"max-w-4xl mx-auto\">\n                <h1 className=\"text-4xl md:text-5xl font-extrabold mb-4\">{post.title}</h1>\n                <div className=\"flex items-center gap-4 mb-8 text-muted-foreground\">\n                    <Avatar>\n                        <AvatarImage src={post.author.image || \'\'} alt={post.author.name || \'\'} />\n                        <AvatarFallback>{post.author.name?.charAt(0)}</AvatarFallback>\n                    </Avatar>\n                    <div>\n                        <span>{post.author.name}</span>\n                        <span className=\"mx-2\">·</span>\n                        <span>{format(new Date(post.createdAt), \'MMM d, yyyy\')}</span>\n                    </div>\n                    <Button size=\"sm\" variant=\"outline\" onClick={handleFollow}>\n                        {isFollowing ? \'Unfollow\' : \'Follow\'}                   \n                     </Button>\n                </div>\n                \n                <div data-color-mode=\"light\">\n                    <MDEditor.Markdown \n                        source={post.content} \n                        className=\"prose prose-lg max-w-none\" \n                    />\n                </div>\n\n                <div className=\"flex items-center justify-between w-full text-muted-foreground mt-8\">\n                    <div className=\"flex items-center gap-4\">\n                        <Button variant=\"ghost\" size=\"icon\" className=\"h-8 w-8\" onClick={handleLike}>\n                        <Heart className={`h-4 w-4 ${isLiked ? \'fill-red-500 text-red-500\' : \'\'}`} />\n                        <span className=\"ml-1 text-xs\">{post.likedBy.length}</span>\n                        </Button>\n                        <Button variant=\"ghost\" size=\"icon\" className=\"h-8 w-8\">\n                        <MessageCircle className=\"h-4 w-4\" />\n                        <span className=\"ml-1 text-xs\">{post.comments.length}</span>\n                        </Button>\n                    </div>\n                    <div className=\"flex items-center gap-1\">\n                        <Button variant=\"ghost\" size=\"icon\" className=\"h-8 w-8\">\n                        <BookOpen className=\"h-4 w-4\" />\n                        </Button>\n                        <Button variant=\"ghost\" size=\"icon\" className=\"h-8 w-8\">\n                        <Share2 className=\"h-4 w-4\" />\n                        </Button>\n                        <Button variant=\"ghost\" size=\"icon\" className=\"h-8 w-8\" onClick={handleBookmark}>\n                        <Bookmark className={`h-4 w-4 ${isBookmarked ? \'fill-primary text-primary\' : \'\'}`} />\n                        </Button>\n                    </div>\n                </div>\n
-                <hr className=\"my-12\" />\n
-                <CommentSection postId={post.id} comments={post.comments} onCommentAdded={refetchPost}/>\n
-            </article>\n        </div>\n    );\n}\n
+'use client';
+
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import MDEditor from '@uiw/react-md-editor';
+import { format } from 'date-fns';
+import CommentSection from './CommentSection';
+import { Post, User } from '@/lib/types';
+import { Button } from '@/components/ui/button';
+import {
+  Bookmark,
+  Heart,
+  MessageCircle,
+  Share2,
+  BookOpen,
+} from 'lucide-react';
+import { useSession } from 'next-auth/react';
+import { useState, useEffect } from 'react';
+import { toggleBookmark, toggleLike, toggleFollow } from '@/lib/api';
+import { useRouter } from 'next/navigation';
+
+interface BlogPostPageClientProps {
+    post: Post & { author: User };
+}
+
+export default function BlogPostPageClient({ post: initialPost }: BlogPostPageClientProps) {
+    const { data: session, status } = useSession();
+    const router = useRouter();
+    const [post, setPost] = useState(initialPost);
+
+    const [isLiked, setIsLiked] = useState(false);
+    const [isBookmarked, setIsBookmarked] = useState(false);
+    const [isFollowing, setIsFollowing] = useState(false);
+
+    useEffect(() => {
+        if (status === 'authenticated' && session?.user?.id) {
+            // These would ideally be checked against the user state from a context
+            setIsLiked(post.likedBy.includes(session.user.id));
+            // Add bookmark and following status checks here
+        }
+    }, [session, status, post]);
+
+    const handleLike = async () => {
+        if (!session) return router.push('/signin');
+        await toggleLike(post.id, session.user.id);
+        setIsLiked(!isLiked);
+    };
+
+    const handleBookmark = async () => {
+        if (!session) return router.push('/signin');
+        await toggleBookmark(post.id, session.user.id);
+        setIsBookmarked(!isBookmarked);
+    };
+
+    const handleFollow = async () => {
+        if (!session) return router.push('/signin');
+        await toggleFollow(post.author.id);
+        setIsFollowing(!isFollowing);
+    };
+
+    const refetchPost = async () => {
+        const res = await fetch(`/api/posts/${post.slug}`);
+        if(res.ok) {
+            const newPost = await res.json();
+            setPost(newPost);
+        }
+    };
+
+    return (
+        <div className="container mx-auto py-8">
+            <article className="max-w-4xl mx-auto">
+                <h1 className="text-4xl md:text-5xl font-extrabold mb-4">{post.title}</h1>
+                <div className="flex items-center gap-4 mb-8 text-muted-foreground">
+                    <Avatar>
+                        <AvatarImage src={post.author.image || ''} alt={post.author.name || ''} />
+                        <AvatarFallback>{post.author.name?.charAt(0)}</AvatarFallback>
+                    </Avatar>
+                    <div>
+                        <span>{post.author.name}</span>
+                        <span className="mx-2">·</span>
+                        <span>{format(new Date(post.createdAt), 'MMM d, yyyy')}</span>
+                    </div>
+                    <Button size="sm" variant="outline" onClick={handleFollow}>
+                        {isFollowing ? 'Unfollow' : 'Follow'}                   
+                     </Button>
+                </div>
+                
+                <div data-color-mode="light">
+                    <MDEditor.Markdown 
+                        source={post.content} 
+                        className="prose prose-lg max-w-none" 
+                    />
+                </div>
+
+                <div className="flex items-center justify-between w-full text-muted-foreground mt-8">
+                    <div className="flex items-center gap-4">
+                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleLike}>
+                        <Heart className={`h-4 w-4 ${isLiked ? 'fill-red-500 text-red-500' : ''}`} />
+                        <span className="ml-1 text-xs">{post.likedBy.length}</span>
+                        </Button>
+                        <Button variant="ghost" size="icon" className="h-8 w-8">
+                        <MessageCircle className="h-4 w-4" />
+                        <span className="ml-1 text-xs">{post.comments.length}</span>
+                        </Button>
+                    </div>
+                    <div className="flex items-center gap-1">
+                        <Button variant="ghost" size="icon" className="h-8 w-8">
+                        <BookOpen className="h-4 w-4" />
+                        </Button>
+                        <Button variant="ghost" size="icon" className="h-8 w-8">
+                        <Share2 className="h-4 w-4" />
+                        </Button>
+                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleBookmark}>
+                        <Bookmark className={`h-4 w-4 ${isBookmarked ? 'fill-primary text-primary' : ''}`} />
+                        </Button>
+                    </div>
+                </div>
+
+                <hr className="my-12" />
+
+                <CommentSection postId={post.id} comments={post.comments} onCommentAdded={refetchPost}/>
+
+            </article>
+        </div>
+    );
+}
