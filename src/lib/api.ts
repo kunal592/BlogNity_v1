@@ -4,6 +4,9 @@
 import { PrismaClient, EntityType, ContactMessage } from '@prisma/client';
 import type { Post, User } from '@prisma/client';
 import nodemailer from 'nodemailer';
+import { revalidatePath } from 'next/cache';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 
 const prisma = new PrismaClient();
 
@@ -228,28 +231,6 @@ export const createPost = async (postData: { title: string; content: string; sta
         await Promise.all(tagOperations);
     }
 
-    // Send email to author
-    // const author = await prisma.user.findUnique({ where: { id: authorId } });
-    // if (author && author.email) {
-    //     const transporter = nodemailer.createTransport({
-    //         host: process.env.EMAIL_HOST,
-    //         port: Number(process.env.EMAIL_PORT),
-    //         secure: process.env.EMAIL_SECURE === 'true',
-    //         auth: {
-    //             user: process.env.EMAIL_USER,
-    //             pass: process.env.EMAIL_PASS,
-    //         },
-    //     });
-
-    //     await transporter.sendMail({
-    //         from: process.env.EMAIL_FROM,
-    //         to: author.email,
-    //         subject: 'Post Created Successfully',
-    //         text: `Your post \"${title}\" has been successfully created!`,
-    //         html: `<h1>Your post \"${title}\" has been successfully created!</h1>`,
-    //     });
-    // }
-
     return post;
 };
 
@@ -316,36 +297,46 @@ export const getNotifications = async (userId: string) => {
 
 // --- INTERACTIONS ---
 export const toggleLike = async (postId: string, userId: string) => {
-    const res = await fetch('/api/posts/like', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ postId, userId }),
+    const existingLike = await prisma.like.findUnique({
+        where: { userId_postId: { userId, postId } },
     });
-    return res.json();
+
+    if (existingLike) {
+        await prisma.like.delete({ where: { id: existingLike.id } });
+    } else {
+        await prisma.like.create({ data: { userId, postId } });
+    }
+    revalidatePath(`/blog/[slug]`);
 };
   
-  export const toggleBookmark = async (postId: string, userId: string) => {
-    const res = await fetch('/api/posts/bookmark', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ postId, userId }),
+export const toggleBookmark = async (postId: string, userId: string) => {
+    const existingBookmark = await prisma.bookmark.findUnique({
+        where: { userId_postId: { userId, postId } },
     });
-    return res.json();
-  };
 
-  export const toggleFollow = async (followingId: string) => {
-    const res = await fetch('/api/users/follow', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ followingId }),
+    if (existingBookmark) {
+        await prisma.bookmark.delete({ where: { id: existingBookmark.id } });
+    } else {
+        await prisma.bookmark.create({ data: { userId, postId } });
+    }
+    revalidatePath(`/blog/[slug]`);
+};
+
+export const toggleFollow = async (followingId: string) => {
+    const session = await getServerSession(authOptions);
+    if(!session || !session.user) throw new Error("Unauthorized");
+    const followerId = session.user.id;
+
+    const existingFollow = await prisma.follow.findUnique({
+        where: { followerId_followingId: { followerId, followingId } },
     });
-    return res.json();
+
+    if (existingFollow) {
+        await prisma.follow.delete({ where: { id: existingFollow.id } });
+    } else {
+        await prisma.follow.create({ data: { followerId, followingId } });
+    }
+    revalidatePath(`/blog/[slug]`);
 };
 
 export const getContactMessages = async (): Promise<ContactMessage[]> => {
