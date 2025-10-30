@@ -1,4 +1,3 @@
-
 import { getPost } from '@/lib/api';
 import { notFound, redirect } from 'next/navigation';
 import type { Metadata } from 'next';
@@ -11,7 +10,8 @@ export const revalidate = 3600;
 
 // Generate metadata for SEO
 export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
-  const post = await getPost(params.slug);
+  const { slug } = params;
+  const post = await getPost(slug);
 
   if (!post) {
     return {
@@ -32,8 +32,9 @@ export async function generateMetadata({ params }: { params: { slug: string } })
 }
 
 export default async function BlogPostPage({ params }: { params: { slug: string } }) {
+  const { slug } = params;
   const session = await getServerSession(authOptions);
-  const post = await getPost(params.slug);
+  const post = await getPost(slug);
 
   if (!post) {
     notFound();
