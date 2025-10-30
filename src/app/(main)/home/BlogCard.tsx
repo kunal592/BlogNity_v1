@@ -101,7 +101,7 @@ export default function BlogCard({ post, author }: BlogCardProps) {
       </CardHeader>
       <CardContent className="p-4 flex-grow">
         <div className="flex gap-2 mb-2">
-          {post.tags.map(tag => (
+          {(post.tags || []).map(tag => (
             <Badge key={tag} variant="secondary">{tag}</Badge>
           ))}
         </div>
