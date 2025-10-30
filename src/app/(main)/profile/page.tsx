@@ -82,21 +82,21 @@ export default function ProfilePage() {
         </TabsList>
         <TabsContent value="blogs" className="mt-6">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {posts.map(post => (
+            {(posts || []).map(post => (
               <BlogCard key={post.id} post={post} author={userProfile as any} />
             ))}
           </div>
         </TabsContent>
         <TabsContent value="bookmarked" className="mt-6">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {bookmarkedPosts.map(post => (
+            {(bookmarkedPosts || []).map(post => (
               <BlogCard key={post.id} post={post} author={post.author} />
             ))}
           </div>
         </TabsContent>
         <TabsContent value="following" className="mt-6">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {followingUsers.map(followedUser => (
+                {(followingUsers || []).map(followedUser => (
                     <Card key={followedUser.id}>
                         <CardContent className="p-4 flex items-center justify-between">
                             <div className="flex items-center gap-4">

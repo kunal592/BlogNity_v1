@@ -5,17 +5,25 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import type { Post } from '@/lib/types';
-import { Archive, Star, Trash2, Gem } from 'lucide-react';
+import { Archive, Star, Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
-import { togglePostExclusivity } from '@/lib/api';
+import { deletePost, togglePostExclusivity } from '@/lib/api';
 import { Switch } from '@/components/ui/switch';
 
 export default function AdminPostTable({ posts, onUpdate }: { posts: Post[], onUpdate: () => void }) {
     const { toast } = useToast();
 
-    const handleAction = (action: string, postTitle: string) => {
-        toast({ title: `${action} post: ${postTitle}`, description: 'This is a mock action.' });
+    const handleDelete = async (postId: string) => {
+        if (!confirm('Are you sure you want to delete this post?')) return;
+
+        const { success } = await deletePost(postId);
+        if (success) {
+            toast({ title: 'Post deleted successfully.' });
+            onUpdate();
+        } else {
+            toast({ title: 'Failed to delete post.', variant: 'destructive' });
+        }
     };
 
     const handleToggleExclusive = async (postId: string, currentStatus: boolean) => {
@@ -56,9 +64,7 @@ export default function AdminPostTable({ posts, onUpdate }: { posts: Post[], onU
                             </TableCell>
                             <TableCell>{post.publishedAt ? format(new Date(post.publishedAt), 'MMM d, yyyy') : '-'}</TableCell>
                             <TableCell className="text-right">
-                                <Button variant="ghost" size="icon" onClick={() => handleAction('Feature', post.title)}><Star className="h-4 w-4" /></Button>
-                                <Button variant="ghost" size="icon" onClick={() => handleAction('Archive', post.title)}><Archive className="h-4 w-4" /></Button>
-                                <Button variant="ghost" size="icon" onClick={() => handleAction('Remove', post.title)}><Trash2 className="h-4 w-4" /></Button>
+                                <Button variant="ghost" size="icon" onClick={() => handleDelete(post.id)}><Trash2 className="h-4 w-4" /></Button>
                             </TableCell>
                         </TableRow>
                     ))}

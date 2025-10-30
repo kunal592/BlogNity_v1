@@ -33,18 +33,18 @@ export default function BlogCardList({ post, author }: BlogCardListProps) {
   const { toast } = useToast();
   
   const [isLiked, setIsLiked] = useState(false);
-  const [likes, setLikes] = useState(post.likes);
+  const [likes, setLikes] = useState(post.likes || 0);
   const [isBookmarked, setIsBookmarked] = useState(false);
 
   useEffect(() => {
     if (user) {
-      setIsLiked(post.likedBy.includes(user.id));
-      setIsBookmarked(user.bookmarkedPosts?.includes(post.id));
+      setIsLiked(post.likedBy?.includes(user.id) || false);
+      setIsBookmarked(user.bookmarkedPosts?.includes(post.id) || false);
     } else {
       setIsLiked(false);
       setIsBookmarked(false);
     }
-  }, [user, post.id, post.likedBy]);
+  }, [user, post.id, post.likedBy, user?.bookmarkedPosts]);
 
   const handleLike = async () => {
     if (!user) return toast({ title: 'Please log in to like posts.', variant: 'destructive' });
@@ -103,7 +103,7 @@ export default function BlogCardList({ post, author }: BlogCardListProps) {
       </div>
       <CardContent className="p-4 flex-grow flex flex-col">
         <div className="flex gap-2 mb-2">
-          {post.tags.map(tag => (
+          {(post.tags || []).map(tag => (
             <Badge key={tag} variant="secondary">{tag}</Badge>
           ))}
         </div>
@@ -118,8 +118,8 @@ export default function BlogCardList({ post, author }: BlogCardListProps) {
           {author && (
             <div className="flex items-center gap-2 text-sm">
               <Avatar className="h-6 w-6">
-                <AvatarImage src={author.avatarUrl || '/user-placeholder.png'} alt={author.name} />
-                <AvatarFallback>{author.name.charAt(0)}</AvatarFallback>
+                <AvatarImage src={author.avatarUrl || '/user-placeholder.png'} alt={author.name || ''} />
+                <AvatarFallback>{author.name ? author.name.charAt(0) : 'U'}</AvatarFallback>
               </Avatar>
               <span>{author.name}</span>
               <span className="hidden md:inline">·</span>

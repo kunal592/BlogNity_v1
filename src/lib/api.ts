@@ -67,9 +67,9 @@ export const getUserProfile = async (userId: string) => {
     postsCount: user._count.posts,
     followersCount: user._count.receivedFollows,
     followingCount: user._count.sentFollows,
-    posts: user.posts,
-    bookmarkedPosts: user.bookmarks.map(b => b.post),
-    followingUsers: user.sentFollows.map(f => f.following)
+    posts: user.posts || [],
+    bookmarkedPosts: (user.bookmarks || []).map(b => b.post),
+    followingUsers: (user.sentFollows || []).map(f => f.following)
   };
 };
 
@@ -159,7 +159,7 @@ export const createPost = async (postData: { title: string; content: string; sta
     });
 
     if (tags && tags.length > 0) {
-        const tagOperations = tags.map(async (tagName) => {
+        const tagOperations = (tags || []).map(async (tagName) => {
             const formattedTagName = tagName.trim().toLowerCase();
             const tagSlug = generateSlug(formattedTagName);
             const tag = await prisma.tag.upsert({
@@ -176,6 +176,28 @@ export const createPost = async (postData: { title: string; content: string; sta
             });
         });
         await Promise.all(tagOperations);
+    }
+
+    // Send email to author
+    const author = await prisma.user.findUnique({ where: { id: authorId } });
+    if (author && author.email) {
+        const transporter = nodemailer.createTransport({
+            host: process.env.EMAIL_HOST,
+            port: Number(process.env.EMAIL_PORT),
+            secure: process.env.EMAIL_SECURE === 'true',
+            auth: {
+                user: process.env.EMAIL_USER,
+                pass: process.env.EMAIL_PASS,
+            },
+        });
+
+        await transporter.sendMail({
+            from: process.env.EMAIL_FROM,
+            to: author.email,
+            subject: 'Post Created Successfully',
+            text: `Your post "${title}" has been successfully created!`,
+            html: `<h1>Your post "${title}" has been successfully created!</h1>`,
+        });
     }
 
     return post;
@@ -227,7 +249,7 @@ export const getNotifications = async (userId: string) => {
     });
   
     const notificationsWithPosts = await Promise.all(
-      notifications.map(async (notification) => {
+      (notifications || []).map(async (notification) => {
         if (notification.entityType === EntityType.POST && notification.entityId) {
           const post = await prisma.post.findUnique({
             where: { id: notification.entityId },
