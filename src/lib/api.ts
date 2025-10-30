@@ -162,6 +162,29 @@ export const getPost = async (slug: string): Promise<any | null> => {
     return null;
 };
 
+export const getPostById = async (postId: string): Promise<any | null> => {
+    const post = await prisma.post.findUnique({
+        where: { id: postId },
+        include: {
+            author: true,
+            tags: { include: { tag: true } },
+            comments: {
+                include: { author: true },
+                where: { parentId: null },
+                orderBy: { createdAt: 'desc' },
+            },
+            likes: { select: { userId: true } },
+            bookmarks: { select: { userId: true } },
+        },
+    });
+
+    if (post) {
+        return transformPost(post);
+    }
+
+    return null;
+};
+
 export const getPostsByAuthor = async (authorId: string) => {
     const posts = await prisma.post.findMany({
         where: { authorId },
