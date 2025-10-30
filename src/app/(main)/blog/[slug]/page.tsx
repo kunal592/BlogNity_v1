@@ -1,8 +1,9 @@
 
 import { getPost } from '@/lib/api';
-import { notFound } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 import type { Metadata } from 'next';
 import BlogPostPageClient from './BlogPostPageClient';
+import { auth } from '@/auth';
 
 // Revalidate the page every hour
 export const revalidate = 3600;
@@ -30,10 +31,15 @@ export async function generateMetadata({ params }: { params: { slug: string } })
 }
 
 export default async function BlogPostPage({ params }: { params: { slug: string } }) {
+  const session = await auth();
   const post = await getPost(params.slug);
 
   if (!post) {
     notFound();
+  }
+
+  if (post.isExclusive && !(session?.user as any)?.hasPaidAccess) {
+    redirect('/membership');
   }
 
   return <BlogPostPageClient post={post} />;

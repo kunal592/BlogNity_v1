@@ -15,7 +15,7 @@ export const authOptions: AuthOptions = {
     }),
   ],
   callbacks: {
-    jwt({ token, user }) {
+    async jwt({ token, user }) {
       if (user) {
         token.id = user.id;
         token.role = user.role;
@@ -23,10 +23,19 @@ export const authOptions: AuthOptions = {
       }
       return token;
     },
-    session({ session, token }) {
-        session.user.id = token.id;
-        session.user.role = token.role;
-        session.user.username = token.username;
+    async session({ session, token }) {
+      if (session.user) {
+        session.user.id = token.id as string;
+        session.user.role = token.role as string;
+        session.user.username = token.username as string;
+
+        const userWithFollows = await prisma.user.findUnique({
+          where: { id: token.id as string },
+          include: { sentFollows: { select: { followingId: true } } },
+        });
+
+        (session.user as any).following = userWithFollows?.sentFollows.map(f => f.followingId) || [];
+      }
       return session;
     },
   },
@@ -41,4 +50,3 @@ export const authOptions: AuthOptions = {
 const handler = NextAuth(authOptions);
 
 export { handler as GET, handler as POST };
-

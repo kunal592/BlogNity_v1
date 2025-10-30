@@ -17,9 +17,8 @@ import {
   BookOpen,
   Gem,
 } from 'lucide-react';
-import { toggleBookmark, toggleLike } from '@/lib/api';
+import { toggleBookmark, toggleLike, toggleFollow } from '@/lib/api';
 import { useState, useEffect } from 'react';
-import { cn } from '@/lib/utils';
 
 interface BlogCardProps {
   post: Post;
@@ -34,13 +33,16 @@ export default function BlogCard({ post, author }: BlogCardProps) {
   const [isLiked, setIsLiked] = useState(false);
   const [likes, setLikes] = useState(post.likes || 0);
   const [isBookmarked, setIsBookmarked] = useState(false);
+  const [isFollowing, setIsFollowing] = useState(false);
 
   useEffect(() => {
-    if (user) {
+    if (user && author) {
       setIsLiked(post.likedBy?.includes(user.id));
       setIsBookmarked(user.bookmarkedPosts?.includes(post.id));
+      // Assuming the user object has a `following` array with author IDs
+      setIsFollowing(user.following?.includes(author.id));
     }
-  }, [user, post.id, post.likedBy]);
+  }, [user, post.id, post.likedBy, author]);
 
   const handleLike = async () => {
     if (!user) return toast({ title: 'Please log in to like posts.', variant: 'destructive' });
@@ -72,6 +74,21 @@ export default function BlogCard({ post, author }: BlogCardProps) {
       toast({ title: 'Something went wrong', variant: 'destructive' });
     }
   };
+
+  const handleFollow = async () => {
+    if (!user) return toast({ title: 'Please log in to follow authors.', variant: 'destructive' });
+    if (!author) return;
+
+    const newIsFollowing = !isFollowing;
+    setIsFollowing(newIsFollowing);
+    try {
+      await toggleFollow(author.id);
+      toast({ title: newIsFollowing ? `Following ${author.name}` : `Unfollowed ${author.name}` });
+    } catch(e) {
+      setIsFollowing(!newIsFollowing);
+      toast({ title: 'Something went wrong', variant: 'destructive' });
+    }
+  };
   
   const handleSummarize = () => {
     toast({
@@ -80,10 +97,25 @@ export default function BlogCard({ post, author }: BlogCardProps) {
     });
   };
 
+  const handleShare = () => {
+    const url = `${window.location.origin}/blog/${post.slug}`;
+    navigator.clipboard.writeText(url)
+      .then(() => {
+        toast({ title: 'Link copied to clipboard!' });
+      })
+      .catch(err => {
+        console.error('Failed to copy: ', err);
+        toast({ title: 'Failed to copy link', variant: 'destructive' });
+      });
+  };
+
+  const postUrl = post.isExclusive && !user?.hasPaidAccess ? '/membership' : `/blog/${post.slug}`;
+
   return (
     <Card className="flex flex-col overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300">
       <CardHeader className="p-0 relative">
         {post.thumbnailUrl && (
+          <Link href={postUrl}>
             <Image
                 src={post.thumbnailUrl}
                 alt={post.title}
@@ -91,6 +123,7 @@ export default function BlogCard({ post, author }: BlogCardProps) {
                 height={400}
                 className="object-cover w-full h-48"
             />
+          </Link>
         )}
         {post.isExclusive && (
           <Badge className="absolute top-2 right-2" variant="destructive">
@@ -101,12 +134,12 @@ export default function BlogCard({ post, author }: BlogCardProps) {
       </CardHeader>
       <CardContent className="p-4 flex-grow">
         <div className="flex gap-2 mb-2">
-          {(post.tags || []).map(tag => (
-            <Badge key={tag} variant="secondary">{tag}</Badge>
+          {(post.tags || []).map(postTag => (
+            <Badge key={postTag.tag.id} variant="secondary">{postTag.tag.name}</Badge>
           ))}
         </div>
         <CardTitle className="text-xl mb-2 leading-tight">
-          <Link href={`/blog/${post.id}`} className={cn("hover:text-primary transition-colors", post.isExclusive && !user?.hasPaidAccess && "pointer-events-none")}>
+          <Link href={postUrl} className="hover:text-primary transition-colors">
             {post.title}
           </Link>
         </CardTitle>
@@ -122,7 +155,9 @@ export default function BlogCard({ post, author }: BlogCardProps) {
               </Avatar>
               <span className="text-sm font-medium">{author.name}</span>
             </div>
-            <Button size="sm" variant="outline">Follow</Button>
+            <Button size="sm" variant="outline" onClick={handleFollow}>
+              {isFollowing ? 'Unfollow' : 'Follow'}
+            </Button>
           </div>
         )}
         <div className="flex items-center justify-between w-full text-muted-foreground">
@@ -140,7 +175,7 @@ export default function BlogCard({ post, author }: BlogCardProps) {
             <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleSummarize}>
               <BookOpen className="h-4 w-4" />
             </Button>
-            <Button variant="ghost" size="icon" className="h-8 w-8">
+            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleShare}>
               <Share2 className="h-4 w-4" />
             </Button>
             <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleBookmark}>

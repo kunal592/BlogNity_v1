@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useSession } from 'next-auth/react';
-import { getUserProfile } from '@/lib/api';
+import { getUserProfile, toggleFollow } from '@/lib/api';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -11,8 +11,8 @@ import { Edit } from 'lucide-react';
 import BlogCard from '../home/BlogCard';
 import { useRouter } from 'next/navigation';
 import type { User, Post } from '@prisma/client';
+import { useToast } from '@/hooks/use-toast';
 
-// Define a type for the user profile data that matches the API response
 interface Profile {
     id: string;
     name: string | null;
@@ -24,29 +24,49 @@ interface Profile {
     followingCount: number;
     posts: Post[];
     bookmarkedPosts: (Post & { author: User })[];
+    followers: User[];
     followingUsers: User[];
 }
 
 export default function ProfilePage() {
-  const { data: session, status } = useSession();
+  const { data: session, status, update } = useSession();
   const router = useRouter();
+  const { toast } = useToast();
   const [userProfile, setUserProfile] = useState<Profile | null>(null);
+  const [followingUsersState, setFollowingUsersState] = useState<User[]>([]);
 
   useEffect(() => {
     if (status === 'authenticated' && session?.user?.id) {
       getUserProfile(session.user.id).then(data => {
         setUserProfile(data);
+        if(data && data.followingUsers) {
+          setFollowingUsersState(data.followingUsers);
+        }
       });
     } else if (status === 'unauthenticated') {
       router.push('/signin');
     }
   }, [session, status, router]);
 
+  const handleUnfollow = async (userId: string, userName: string) => {
+    await toggleFollow(userId);
+    toast({ title: `Unfollowed ${userName}` });
+    // Optimistically update the UI
+    setFollowingUsersState(prev => prev.filter(user => user.id !== userId));
+    // Update the main user profile state to reflect the change in the following count
+    if(userProfile) {
+      setUserProfile({
+        ...userProfile,
+        followingCount: userProfile.followingCount - 1,
+      })
+    }
+  };
+
   if (status === 'loading' || !userProfile) {
     return <div>Loading profile...</div>;
   }
   
-  const { name, username, image, bio, postsCount, followersCount, followingCount, posts, bookmarkedPosts, followingUsers } = userProfile;
+  const { name, username, image, bio, postsCount, followersCount, followingCount, posts, bookmarkedPosts, followers } = userProfile;
 
   return (
     <div className="container mx-auto py-8">
@@ -60,7 +80,7 @@ export default function ProfilePage() {
             <div className="flex-1">
               <div className="flex justify-between items-start">
                 <h1 className="text-3xl font-bold">{name}</h1>
-                <Button variant="outline"><Edit className="mr-2 h-4 w-4" /> Edit Profile</Button>
+                <Button variant="outline" onClick={() => router.push('/profile/edit')}><Edit className="mr-2 h-4 w-4" /> Edit Profile</Button>
               </div>
               <p className="text-muted-foreground">@{username}</p>
               <p className="mt-4">{bio || 'This user has not set a bio yet.'}</p>
@@ -75,9 +95,10 @@ export default function ProfilePage() {
       </Card>
 
       <Tabs defaultValue="blogs">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="blogs">My Blogs</TabsTrigger>
           <TabsTrigger value="bookmarked">Bookmarked</TabsTrigger>
+          <TabsTrigger value="followers">Followers</TabsTrigger>
           <TabsTrigger value="following">Following</TabsTrigger>
         </TabsList>
         <TabsContent value="blogs" className="mt-6">
@@ -88,15 +109,35 @@ export default function ProfilePage() {
           </div>
         </TabsContent>
         <TabsContent value="bookmarked" className="mt-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div className_="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {(bookmarkedPosts || []).map(post => (
               <BlogCard key={post.id} post={post} author={post.author} />
             ))}
           </div>
         </TabsContent>
+        <TabsContent value="followers" className="mt-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {(followers || []).map(follower => (
+                    <Card key={follower.id}>
+                        <CardContent className="p-4 flex items-center justify-between">
+                            <div className="flex items-center gap-4">
+                                <Avatar>
+                                    {follower.image && <AvatarImage src={follower.image} alt={follower.name || ''} />}
+                                    <AvatarFallback>{follower.name ? follower.name.charAt(0) : 'U'}</AvatarFallback>
+                                </Avatar>
+                                <div>
+                                    <p className="font-semibold">{follower.name}</p>
+                                    <p className="text-sm text-muted-foreground">@{follower.username}</p>
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
+                ))}
+            </div>
+        </TabsContent>
         <TabsContent value="following" className="mt-6">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {(followingUsers || []).map(followedUser => (
+                {followingUsersState.map(followedUser => (
                     <Card key={followedUser.id}>
                         <CardContent className="p-4 flex items-center justify-between">
                             <div className="flex items-center gap-4">
@@ -109,7 +150,7 @@ export default function ProfilePage() {
                                     <p className="text-sm text-muted-foreground">@{followedUser.username}</p>
                                 </div>
                             </div>
-                            <Button variant="secondary" size="sm">Unfollow</Button>
+                            <Button variant="secondary" size="sm" onClick={() => handleUnfollow(followedUser.id, followedUser.name || '')}>Unfollow</Button>
                         </CardContent>
                     </Card>
                 ))}

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, NotificationType } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
@@ -15,6 +15,11 @@ export async function POST(req: NextRequest) {
         },
       },
     });
+
+    const post = await prisma.post.findUnique({ where: { id: postId } });
+    if (!post) {
+        return NextResponse.json({ error: 'Post not found' }, { status: 404 });
+    }
 
     if (existingLike) {
       await prisma.like.delete({
@@ -41,6 +46,20 @@ export async function POST(req: NextRequest) {
         where: { id: postId },
         data: { likesCount: { increment: 1 } },
     });
+
+    // Create notification only when a new like is created
+    if (userId !== post.authorId) { // Prevent users from getting notifications for their own actions
+        await prisma.notification.create({
+          data: {
+            type: NotificationType.LIKE,
+            actorId: userId,
+            recipientId: post.authorId,
+            entityId: postId,
+            entityType: 'POST',
+          },
+        });
+      }
+
       return NextResponse.json({ liked: true, likesCount: updatedPost.likesCount });
     }
   } catch (error) {

@@ -9,6 +9,11 @@ export async function GET(req: Request) {
       },
       include: {
         author: true,
+        tags: { 
+          include: {
+            tag: true
+          }
+        }
       },
       orderBy: {
         createdAt: "desc",

@@ -14,7 +14,7 @@ import { useRouter } from 'next/navigation';
 
 function NotificationIcon({ type }: { type: string }) {
     switch (type) {
-      case 'NEW_FOLLOWER':
+      case 'FOLLOW':
         return <UserPlus className="h-5 w-5 text-blue-500" />;
       case 'LIKE':
         return <Heart className="h-5 w-5 text-red-500" />;
@@ -43,7 +43,7 @@ export default function NotificationPage() {
     const fromUser = notification.actor;
     if (!fromUser) return 'An action occurred.';
     switch (notification.type) {
-        case 'NEW_FOLLOWER':
+        case 'FOLLOW':
             return <><span className="font-semibold">{fromUser.name}</span> started following you.</>;
         case 'LIKE':
             return <><span className="font-semibold">{fromUser.name}</span> liked your post.</>;

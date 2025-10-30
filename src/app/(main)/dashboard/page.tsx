@@ -14,19 +14,26 @@ import { format } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 
+interface DashboardData {
+    posts: Post[];
+    totalViews: number;
+    totalLikes: number;
+    totalComments: number;
+}
+
 export default function DashboardPage() {
   const { data: session, status } = useSession();
   const user = session?.user;
   const { toast } = useToast();
   const router = useRouter();
-  const [posts, setPosts] = useState<Post[]>([]);
+  const [dashboardData, setDashboardData] = useState<DashboardData>({ posts: [], totalViews: 0, totalLikes: 0, totalComments: 0 });
 
   const isLoading = status === 'loading';
 
   useEffect(() => {
     if (status === 'authenticated' && user?.id) {
       getPostsByAuthor(user.id).then(data => {
-        setPosts(data);
+        setDashboardData(data);
       });
     }
   }, [status, user]);
@@ -36,7 +43,7 @@ export default function DashboardPage() {
 
     const { success } = await deletePost(postId);
     if (success) {
-      setPosts(posts.filter(p => p.id !== postId));
+      setDashboardData(prevData => ({ ...prevData, posts: prevData.posts.filter(p => p.id !== postId) }));
       toast({ title: 'Post deleted successfully.' });
     } else {
       toast({ title: 'Failed to delete post.', variant: 'destructive' });
@@ -52,12 +59,9 @@ export default function DashboardPage() {
     return null;
   }
 
+  const { posts, totalViews, totalLikes, totalComments } = dashboardData;
   const publishedPosts = posts.filter(p => p.status.toLowerCase() === 'published');
   const draftPosts = posts.filter(p => p.status.toLowerCase() === 'draft');
-
-  const totalViews = posts.reduce((sum, p) => sum + (p.viewsCount || 0), 0);
-  const totalLikes = posts.reduce((sum, p) => sum + (p.likesCount || 0), 0);
-  const totalComments = posts.reduce((sum, p) => sum + (p.commentsCount || 0), 0);
 
   return (
     <div className="container mx-auto space-y-8 py-8">

@@ -8,6 +8,24 @@ import nodemailer from 'nodemailer';
 const prisma = new PrismaClient();
 
 // --- USER API ---
+export const getTopAuthors = async () => {
+  const authors = await prisma.user.findMany({
+    include: {
+      _count: {
+        select: { receivedFollows: true },
+      },
+    },
+    orderBy: {
+      receivedFollows: { _count: 'desc' },
+    },
+    take: 10,
+  });
+  return authors.map(author => ({
+    ...author,
+    followersCount: author._count.receivedFollows,
+  }));
+};
+
 export const getUserProfile = async (userId: string) => {
   const user = await prisma.user.findUnique({
     where: { id: userId },
@@ -120,14 +138,33 @@ export const getPost = async (slug: string): Promise<any | null> => {
     return post;
 };
 
-export const getPostsByAuthor = async (authorId: string): Promise<Post[]> => {
-    return prisma.post.findMany({
-      where: { authorId },
-      orderBy: { createdAt: 'desc' },
-      include: {
-        author: true,
-      },
+export const getPostsByAuthor = async (authorId: string) => {
+    const posts = await prisma.post.findMany({
+        where: { authorId },
+        orderBy: { createdAt: 'desc' },
+        include: {
+            author: true,
+        },
     });
+
+    const stats = await prisma.post.aggregate({
+        where: {
+            authorId: authorId,
+            status: 'PUBLISHED',
+        },
+        _sum: {
+            viewsCount: true,
+            likesCount: true,
+            commentsCount: true,
+        },
+    });
+
+    return {
+        posts,
+        totalViews: stats._sum.viewsCount || 0,
+        totalLikes: stats._sum.likesCount || 0,
+        totalComments: stats._sum.commentsCount || 0,
+    };
 };
 
 const generateSlug = (title: string) => {
@@ -179,26 +216,26 @@ export const createPost = async (postData: { title: string; content: string; sta
     }
 
     // Send email to author
-    const author = await prisma.user.findUnique({ where: { id: authorId } });
-    if (author && author.email) {
-        const transporter = nodemailer.createTransport({
-            host: process.env.EMAIL_HOST,
-            port: Number(process.env.EMAIL_PORT),
-            secure: process.env.EMAIL_SECURE === 'true',
-            auth: {
-                user: process.env.EMAIL_USER,
-                pass: process.env.EMAIL_PASS,
-            },
-        });
+    // const author = await prisma.user.findUnique({ where: { id: authorId } });
+    // if (author && author.email) {
+    //     const transporter = nodemailer.createTransport({
+    //         host: process.env.EMAIL_HOST,
+    //         port: Number(process.env.EMAIL_PORT),
+    //         secure: process.env.EMAIL_SECURE === 'true',
+    //         auth: {
+    //             user: process.env.EMAIL_USER,
+    //             pass: process.env.EMAIL_PASS,
+    //         },
+    //     });
 
-        await transporter.sendMail({
-            from: process.env.EMAIL_FROM,
-            to: author.email,
-            subject: 'Post Created Successfully',
-            text: `Your post "${title}" has been successfully created!`,
-            html: `<h1>Your post "${title}" has been successfully created!</h1>`,
-        });
-    }
+    //     await transporter.sendMail({
+    //         from: process.env.EMAIL_FROM,
+    //         to: author.email,
+    //         subject: 'Post Created Successfully',
+    //         text: `Your post \"${title}\" has been successfully created!`,
+    //         html: `<h1>Your post \"${title}\" has been successfully created!</h1>`,
+    //     });
+    // }
 
     return post;
 };
