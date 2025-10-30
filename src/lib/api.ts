@@ -1,7 +1,7 @@
 
 'use server';
 
-import { PrismaClient, EntityType, ContactMessage } from '@prisma/client';
+import { PrismaClient, EntityType, NotificationType, ContactMessage } from '@prisma/client';
 import type { Post, User } from '@prisma/client';
 import nodemailer from 'nodemailer';
 import { revalidatePath } from 'next/cache';
@@ -339,6 +339,17 @@ export const toggleLike = async (postId: string, userId: string) => {
         await prisma.like.delete({ where: { id: existingLike.id } });
     } else {
         await prisma.like.create({ data: { userId, postId } });
+        if (post.authorId !== userId) {
+            await prisma.notification.create({
+                data: {
+                    type: NotificationType.LIKE,
+                    actorId: userId,
+                    recipientId: post.authorId,
+                    entityId: postId,
+                    entityType: EntityType.POST,
+                },
+            });
+        }
     }
 
     revalidatePath('/');

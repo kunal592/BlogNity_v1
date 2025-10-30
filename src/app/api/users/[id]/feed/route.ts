@@ -6,10 +6,16 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
+    const userId = params.id;
+
+    if (!userId) {
+      return new NextResponse("User ID is required", { status: 400 });
+    }
+
     const user = await db.user.findUnique({
-      where: { id: params.id },
+      where: { id: userId },
       include: {
-        followingUsers: true,
+        sentFollows: { include: { following: true } },
       },
     });
 
@@ -17,13 +23,11 @@ export async function GET(
       return new NextResponse("User not found", { status: 404 });
     }
 
-    const followedUserIds = user.followingUsers.map((user) => user.id);
+    const followedUserIds = user.sentFollows.map((follow) => follow.followingId);
 
     const feedPosts = await db.post.findMany({
       where: {
-        authorId: {
-          in: followedUserIds,
-        },
+        authorId: { in: followedUserIds },
       },
       include: {
         author: true,
@@ -35,7 +39,7 @@ export async function GET(
 
     return NextResponse.json(feedPosts);
   } catch (error) {
-    console.error("[USERS_ID_FEED_GET]", error);
+    console.error("[FEED_GET]", error);
     return new NextResponse("Internal error", { status: 500 });
   }
 }

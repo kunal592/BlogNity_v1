@@ -38,8 +38,7 @@ export default function BlogCard({ post, author }: BlogCardProps) {
   useEffect(() => {
     if (user && author) {
       setIsLiked(post.likedBy?.includes(user.id));
-      setIsBookmarked(user.bookmarkedPosts?.includes(post.id));
-      // Assuming the user object has a `following` array with author IDs
+      setIsBookmarked(user.bookmarkedPosts?.some((p: any) => p.id === post.id));
       setIsFollowing(user.following?.includes(author.id));
     }
   }, [user, post.id, post.likedBy, author]);
@@ -150,7 +149,7 @@ export default function BlogCard({ post, author }: BlogCardProps) {
           <div className="flex items-center gap-2 mb-4 w-full justify-between">
             <div className="flex items-center gap-2">
               <Avatar className="h-8 w-8">
-                {author.avatarUrl && <AvatarImage src={author.avatarUrl} alt={author.name || ''} />}
+                {author.image && <AvatarImage src={author.image} alt={author.name || ''} />}
                 <AvatarFallback>{author.name ? author.name.charAt(0) : 'U'}</AvatarFallback>
               </Avatar>
               <span className="text-sm font-medium">{author.name}</span>

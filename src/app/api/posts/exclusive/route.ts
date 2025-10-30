@@ -5,7 +5,7 @@ export async function GET(req: Request) {
   try {
     const posts = await db.post.findMany({
       where: {
-        visibility: "EXCLUSIVE",
+        visibility: "PRIVATE",
       },
       include: {
         author: true,

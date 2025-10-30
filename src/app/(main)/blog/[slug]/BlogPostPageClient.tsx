@@ -35,7 +35,7 @@ export default function BlogPostPageClient({ post: initialPost }: BlogPostPageCl
         if (status === 'authenticated' && session?.user?.id) {
             setIsLiked(post.likedBy?.includes(session.user.id) || false);
             setIsBookmarked(post.bookmarkedBy?.includes(session.user.id) || false);
-            // Add following status checks here
+            setIsFollowing((session.user as any).following?.includes(post.author.id) || false);
         }
     }, [session, status, post]);
 
