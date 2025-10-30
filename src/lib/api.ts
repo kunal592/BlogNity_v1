@@ -336,7 +336,7 @@ export const toggleLike = async (postId: string, userId: string) => {
     });
 
     if (existingLike) {
-        await prisma.like.delete({ where: { id: existingLike.id } });
+        await prisma.like.delete({ where: { userId_postId: { userId, postId } } });
     } else {
         await prisma.like.create({ data: { userId, postId } });
         if (post.authorId !== userId) {
@@ -383,7 +383,7 @@ export const toggleFollow = async (followingId: string) => {
     });
 
     if (existingFollow) {
-        await prisma.follow.delete({ where: { id: existingFollow.id } });
+        await prisma.follow.delete({ where: { followerId_followingId: { followerId, followingId } } });
     } else {
         await prisma.follow.create({ data: { followerId, followingId } });
     }
