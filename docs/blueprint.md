@@ -24,3 +24,20 @@
 - Smooth transitions via Framer Motion for all UI elements. Use toasts for all success operations (like, follow, bookmark, etc.).
 
 
+
+
+## problems to fix:
+#only implement/improve logics dont edit alter UI and other logic of the project.
+
+
+- check comment section, if user comment on blog it should list there wihout manual refreshing the site.
+
+- search bar is not working.
+
+- implement serch user feature in this project.
+
+- check the self follow and remove it user should not follow herself.
+
+- on profile section, at edit the updated values/data from user is not working means user enter updated avtar and bio but it doesnot reflect in there profile.
+
+- one user one view: now at dasboard total views counter there is a count of views where i want that if a user view a blog (ntimes) it's view count should be taken 1 only no more from that user at a blog.
