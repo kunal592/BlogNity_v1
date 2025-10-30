@@ -3,7 +3,8 @@ import { getPost } from '@/lib/api';
 import { notFound, redirect } from 'next/navigation';
 import type { Metadata } from 'next';
 import BlogPostPageClient from './BlogPostPageClient';
-import { auth } from '@/lib/auth';
+import { getServerSession } from 'next-auth/next';
+import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 
 // Revalidate the page every hour
 export const revalidate = 3600;
@@ -31,7 +32,7 @@ export async function generateMetadata({ params }: { params: { slug: string } })
 }
 
 export default async function BlogPostPage({ params }: { params: { slug: string } }) {
-  const session = await auth();
+  const session = await getServerSession(authOptions);
   const post = await getPost(params.slug);
 
   if (!post) {
