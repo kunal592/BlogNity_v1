@@ -162,6 +162,7 @@ export const getPost = async (slug: string): Promise<any | null> => {
 };
 
 export const searchPosts = async (query: string): Promise<any[]> => {
+    console.log(`Searching for posts with query: "${query}"`);
     const posts = await prisma.post.findMany({
         where: {
             OR: [
@@ -186,6 +187,7 @@ export const searchPosts = async (query: string): Promise<any[]> => {
             bookmarks: { select: { userId: true } },
         },
     });
+    console.log(`Found ${posts.length} posts for query: "${query}"`);
     return posts.map(transformPost);
 };
 
