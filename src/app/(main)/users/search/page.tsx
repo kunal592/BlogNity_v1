@@ -66,7 +66,7 @@ export default function UserSearchPage() {
           ))}
         </div>
       ) : (
-        <p>No users found.</p>
+        <p>No users found for "{query}".</p>
       )}
     </div>
   );

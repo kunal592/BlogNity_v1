@@ -15,6 +15,7 @@ export default function SearchPage() {
   useEffect(() => {
     if (query) {
       const fetchPosts = async () => {
+        setLoading(true);
         try {
           const results = await searchPosts(query);
           setPosts(results);
@@ -25,6 +26,8 @@ export default function SearchPage() {
         }
       };
       fetchPosts();
+    } else {
+      setLoading(false);
     }
   }, [query]);
 

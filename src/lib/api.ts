@@ -178,10 +178,12 @@ export const searchPosts = async (query: string): Promise<any[]> => {
                     },
                 },
             ],
-            isPublished: true,
+            status: 'PUBLISHED',
         },
         include: {
             author: true,
+            likes: { select: { userId: true } },
+            bookmarks: { select: { userId: true } },
         },
     });
     return posts.map(transformPost);
