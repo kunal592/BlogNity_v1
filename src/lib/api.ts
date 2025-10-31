@@ -295,7 +295,7 @@ export const createPost = async (postData: { title: string; content: string; sta
         }
     });
 
-    if (tags && tags.length >. 0) {
+    if (tags && tags.length > 0) {
         const tagOperations = (tags || []).map(async (tagName) => {
             const formattedTagName = tagName.trim().toLowerCase();
             const tagSlug = generateSlug(formattedTagName);
