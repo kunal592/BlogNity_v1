@@ -114,6 +114,30 @@ export const getUsers = async (): Promise<User[]> => {
   return prisma.user.findMany();
 };
 
+export const searchUsers = async (query: string): Promise<User[]> => {
+    console.log(`Searching for users with query: "${query}"`);
+    const users = await prisma.user.findMany({
+        where: {
+            OR: [
+                {
+                    name: {
+                        contains: query,
+                        mode: 'insensitive',
+                    },
+                },
+                {
+                    username: {
+                        contains: query,
+                        mode: 'insensitive',
+                    },
+                },
+            ],
+        },
+    });
+    console.log(`Found ${users.length} users for query: "${query}"`);
+    return users;
+};
+
 
 // --- POST API ---
 export const getPosts = async (): Promise<any[]> => {
@@ -271,7 +295,7 @@ export const createPost = async (postData: { title: string; content: string; sta
         }
     });
 
-    if (tags && tags.length > 0) {
+    if (tags && tags.length >. 0) {
         const tagOperations = (tags || []).map(async (tagName) => {
             const formattedTagName = tagName.trim().toLowerCase();
             const tagSlug = generateSlug(formattedTagName);
