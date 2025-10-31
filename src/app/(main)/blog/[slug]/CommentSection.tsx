@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -12,15 +12,19 @@ import { Comment } from '@/lib/types';
 
 interface CommentSectionProps {
   postId: string;
-  comments: Comment[];
-  onCommentAdded: () => void;
+  initialComments: Comment[];
 }
 
-export default function CommentSection({ postId, comments, onCommentAdded }: CommentSectionProps) {
+export default function CommentSection({ postId, initialComments }: CommentSectionProps) {
   const { data: session } = useSession();
   const router = useRouter();
   const [commentText, setCommentText] = useState('');
+  const [comments, setComments] = useState(initialComments);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    setComments(initialComments);
+  }, [initialComments]);
 
   const handleCommentSubmit = async () => {
     if (!session) {
@@ -39,8 +43,9 @@ export default function CommentSection({ postId, comments, onCommentAdded }: Com
         body: JSON.stringify({ postId, content: commentText }),
       });
       if(res.ok) {
+        const newComment = await res.json();
+        setComments([newComment, ...comments]);
         setCommentText('');
-        onCommentAdded();
       }
     } catch (error) {
         console.error("Failed to post comment", error);

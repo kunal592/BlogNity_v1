@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+'''import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { getServerSession } from "next-auth";
 import { authOptions } from "../../auth/[...nextauth]/route";
@@ -34,6 +34,15 @@ export async function POST(req: Request) {
                 postId,
                 authorId,
             },
+            include: {
+                author: {
+                    select: {
+                        id: true,
+                        name: true,
+                        image: true,
+                    }
+                }
+            }
         });
 
         if (authorId !== post.authorId) {
@@ -54,3 +63,4 @@ export async function POST(req: Request) {
         return new NextResponse("Internal error", { status: 500 });
     }
 }
+'''

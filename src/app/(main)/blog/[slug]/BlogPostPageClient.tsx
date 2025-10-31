@@ -57,14 +57,6 @@ export default function BlogPostPageClient({ post: initialPost }: BlogPostPageCl
         setIsFollowing(!isFollowing);
     };
 
-    const refetchPost = async () => {
-        const res = await fetch(`/api/posts/${post.slug}`);
-        if(res.ok) {
-            const newPost = await res.json();
-            setPost(newPost);
-        }
-    };
-
     return (
         <div className="container mx-auto py-8">
             <article className="max-w-4xl mx-auto">
@@ -117,7 +109,7 @@ export default function BlogPostPageClient({ post: initialPost }: BlogPostPageCl
 
                 <hr className="my-12" />
 
-                <CommentSection postId={post.id} comments={post.comments || []} onCommentAdded={refetchPost}/>
+                <CommentSection postId={post.id} initialComments={post.comments || []} />
 
             </article>
         </div>
