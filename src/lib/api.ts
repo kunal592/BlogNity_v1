@@ -161,6 +161,37 @@ export const getPost = async (slug: string): Promise<any | null> => {
     return null;
 };
 
+export const searchPosts = async (query: string): Promise<any[]> => {
+    const posts = await prisma.post.findMany({
+        where: {
+            status: 'PUBLISHED',
+            OR: [
+                {
+                    title: {
+                        contains: query,
+                        mode: 'insensitive',
+                    },
+                },
+                {
+                    content: {
+                        contains: query,
+                        mode: 'insensitive',
+                    },
+                },
+            ],
+        },
+        include: {
+            author: true,
+            tags: { include: { tag: true } },
+            likes: { select: { userId: true } },
+            bookmarks: { select: { userId: true } },
+        },
+        orderBy: { publishedAt: 'desc' },
+    });
+
+    return posts.map(transformPost);
+};
+
 export const getPostById = async (postId: string): Promise<any | null> => {
     const post = await prisma.post.findUnique({
         where: { id: postId },
@@ -279,7 +310,7 @@ export const updatePost = async (postId: string, updateData: any): Promise<Post 
             slug,
             status,
             visibility,
-            updatedAt: new Date(),
+            updatedAt: new new Date(),
             publishedAt: (await prisma.post.findUnique({where: {id: postId}}))?.status !== 'PUBLISHED' && status === 'PUBLISHED' ? new Date() : undefined,
         }
     });
@@ -376,6 +407,10 @@ export const toggleFollow = async (followingId: string) => {
     const session = await getServerSession(authOptions);
     if(!session || !session.user) throw new Error("Unauthorized");
     const followerId = session.user.id;
+
+    if (followerId === followingId) {
+        throw new Error("You cannot follow yourself.");
+    }
 
     const existingFollow = await prisma.follow.findUnique({
         where: { followerId_followingId: { followerId, followingId } },

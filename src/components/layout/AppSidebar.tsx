@@ -12,7 +12,7 @@ import {
 import { Logo } from '@/components/shared/Logo';
 import { useSession } from 'next-auth/react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import type { NavItem } from '@/lib/types';
 import {
   Home,
@@ -26,8 +26,12 @@ import {
   Settings,
   Shield,
   Gem,
+  Search
 } from 'lucide-react';
 import { ThemeToggle } from '../shared/ThemeToggle';
+import { Input } from '@/components/ui/input';
+import { useState } from 'react';
+import { Button } from '@/components/ui/button';
 
 const navItems: NavItem[] = [
   { href: '/home', title: 'Home', icon: Home },
@@ -49,10 +53,19 @@ const adminNavItem: NavItem = { href: '/admin', title: 'Admin', icon: Shield };
 
 export default function AppSidebar() {
   const { data: session } = useSession();
-  const user = session?.user as any; // Using any to access role
+  const user = session?.user as any;
   const pathname = usePathname();
+  const router = useRouter();
+  const [searchQuery, setSearchQuery] = useState('');
 
   const isActive = (href: string) => pathname === href;
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      router.push(`/search/users?query=${searchQuery}`);
+    }
+  };
 
   return (
     <>
@@ -60,6 +73,17 @@ export default function AppSidebar() {
         <Logo />
       </SidebarHeader>
       <SidebarContent className="p-2">
+        <form onSubmit={handleSearch} className="p-2">
+            <div className="relative">
+                <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input 
+                    placeholder="Search users..."
+                    className="pl-8"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                />
+            </div>
+        </form>
         <SidebarMenu>
           {navItems.map((item) => (
             <SidebarMenuItem key={item.href}>
