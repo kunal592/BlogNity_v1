@@ -40,4 +40,8 @@
 
 - on profile section, at edit the updated values/data from user is not working means user enter updated avtar and bio but it doesnot reflect in there profile.
 
+
+
+
+# future update- ignore now.
 - one user one view: now at dasboard total views counter there is a count of views where i want that if a user view a blog (ntimes) it's view count should be taken 1 only no more from that user at a blog.

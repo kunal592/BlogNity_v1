@@ -35,7 +35,7 @@ export default function BlogPostPageClient({ post: initialPost }: BlogPostPageCl
         if (status === 'authenticated' && session?.user?.id) {
             setIsLiked(post.likedBy?.includes(session.user.id) || false);
             setIsBookmarked(post.bookmarkedBy?.includes(session.user.id) || false);
-            setIsFollowing((session.user as any).following?.includes(post.author.id) || false);
+            setIsFollowing((post.author as any).followers?.some((follower: any) => follower.followerId === session.user.id) || false);
         }
     }, [session, status, post]);
 
@@ -58,7 +58,7 @@ export default function BlogPostPageClient({ post: initialPost }: BlogPostPageCl
     };
 
     const refetchPost = async () => {
-        const res = await fetch(`/api/posts/${post.slug}`);
+        const res = await fetch(`/api/posts/${post.id}`);
         if(res.ok) {
             const newPost = await res.json();
             setPost(newPost);

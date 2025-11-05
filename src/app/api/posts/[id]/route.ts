@@ -10,7 +10,14 @@ export async function GET(
   try {
     const post = await db.post.findUnique({
       where: { id: params.id },
-      include: { author: true },
+      include: { 
+        author: true, 
+        comments: {
+          include: {
+            author: true
+          }
+        }
+      },
     });
 
     if (!post) {
