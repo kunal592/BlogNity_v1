@@ -1,11 +1,12 @@
 
 import { NextResponse } from 'next/server';
-import { auth } from '@/auth';
+import { getServerSession } from 'next-auth/next';
+import { authOptions } from '@/lib/auth';
 import crypto from 'crypto';
 import { db } from '@/lib/db';
 
 export async function POST(req: Request) {
-  const session = await auth();
+  const session = await getServerSession(authOptions);
 
   if (!session?.user?.id) {
     return new NextResponse('Unauthorized', { status: 401 });

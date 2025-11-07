@@ -1,51 +1,6 @@
 
-import NextAuth, { AuthOptions } from "next-auth";
-import GoogleProvider from "next-auth/providers/google";
-import { PrismaAdapter } from "@next-auth/prisma-adapter";
-import { PrismaClient } from "@prisma/client";
-
-const prisma = new PrismaClient();
-
-export const authOptions: AuthOptions = {
-  adapter: PrismaAdapter(prisma),
-  providers: [
-    GoogleProvider({
-      clientId: process.env.GOOGLE_CLIENT_ID as string,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET as string,
-    }),
-  ],
-  callbacks: {
-    async jwt({ token, user }) {
-      if (user) {
-        token.id = user.id;
-        token.role = user.role;
-        token.username = user.username;
-      }
-      return token;
-    },
-    async session({ session, token }) {
-      if (session.user) {
-        session.user.id = token.id as string;
-        session.user.role = token.role as string;
-        session.user.username = token.username as string;
-
-        const userWithFollows = await prisma.user.findUnique({
-          where: { id: token.id as string },
-          include: { sentFollows: { select: { followingId: true } } },
-        });
-
-        (session.user as any).following = userWithFollows?.sentFollows.map(f => f.followingId) || [];
-      }
-      return session;
-    },
-  },
-  pages: {
-    signIn: '/signin',
-  },
-  session: {
-    strategy: "jwt",
-  },
-};
+import NextAuth from "next-auth";
+import { authOptions } from "@/lib/auth";
 
 const handler = NextAuth(authOptions);
 

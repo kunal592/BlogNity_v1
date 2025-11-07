@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { getServerSession } from "next-auth";
-import { authOptions } from "../../auth/[...nextauth]/route";
+import { authOptions } from "@/lib/auth";
 import { NotificationType } from '@prisma/client';
 
 export async function POST(req: Request) {
@@ -31,7 +31,10 @@ export async function POST(req: Request) {
         if (existingFollow) {
             await db.follow.delete({
                 where: {
-                    id: existingFollow.id,
+                    followerId_followingId: {
+                        followerId,
+                        followingId,
+                    },
                 },
             });
             return NextResponse.json({ message: "Unfollowed" });

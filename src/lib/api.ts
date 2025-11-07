@@ -2,6 +2,7 @@
 
 import { PrismaClient, EntityType, NotificationType, PostStatus, PostVisibility } from '@prisma/client';
 import type { Post, User, ContactMessage } from '@prisma/client';
+import { PostWithExtras } from './types'; // Import PostWithExtras
 import nodemailer from 'nodemailer';
 import { revalidatePath } from 'next/cache';
 import { getServerSession } from 'next-auth';
@@ -10,7 +11,7 @@ import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 const prisma = new PrismaClient();
 
 // --- HELPERS ---
-const transformPost = (post: any) => {
+const transformPost = (post: any): PostWithExtras => {
     const likedBy = post.likes.map((like: any) => like.userId);
     const bookmarkedBy = post.bookmarks?.map((bookmark: any) => bookmark.userId) || [];
     const { likes, bookmarks, ...restOfPost } = post;
@@ -18,7 +19,7 @@ const transformPost = (post: any) => {
         ...restOfPost,
         likedBy,
         bookmarkedBy,
-    };
+    } as PostWithExtras;
 };
 
 

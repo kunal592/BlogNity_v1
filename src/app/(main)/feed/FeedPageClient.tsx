@@ -1,6 +1,6 @@
 'use client';
 
-import type { Post, User } from '@/lib/types';
+import type { Post, Author } from '@/lib/types';
 import { useSession } from 'next-auth/react';
 import BlogList from '@/app/(main)/home/BlogList';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -13,8 +13,8 @@ import { toggleFollow } from '@/lib/api';
 import { useToast } from '@/hooks/use-toast';
 
 interface FeedPageClientProps {
-  initialPosts: (Post & { author?: User })[];
-  topAuthors: User[];
+  initialPosts: Post[];
+  topAuthors: Author[];
 }
 
 export default function FeedPageClient({ initialPosts, topAuthors }: FeedPageClientProps) {

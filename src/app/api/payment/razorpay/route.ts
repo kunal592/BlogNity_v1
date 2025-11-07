@@ -1,6 +1,7 @@
 
 import { NextResponse } from 'next/server';
-import { auth } from '@/auth';
+import { getServerSession } from "next-auth/next"
+import { authOptions } from '@/lib/auth';
 import Razorpay from 'razorpay';
 import { db } from '@/lib/db';
 
@@ -10,7 +11,7 @@ const razorpay = new Razorpay({
 });
 
 export async function POST(req: Request) {
-  const session = await auth();
+  const session = await getServerSession(authOptions);
 
   if (!session?.user?.id) {
     return new NextResponse('Unauthorized', { status: 401 });

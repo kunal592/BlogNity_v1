@@ -5,7 +5,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import MDEditor from '@uiw/react-md-editor';
 import { format } from 'date-fns';
 import CommentSection from './CommentSection';
-import { Post, User } from '@/lib/types';
+import { PostWithExtras } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import {
   Bookmark,
@@ -18,9 +18,10 @@ import { useSession } from 'next-auth/react';
 import { useState, useEffect } from 'react';
 import { toggleBookmark, toggleLike, toggleFollow } from '@/lib/api';
 import { useRouter } from 'next/navigation';
+import { User } from '@prisma/client';
 
 interface BlogPostPageClientProps {
-    post: Post & { author: User };
+    post: PostWithExtras;
 }
 
 export default function BlogPostPageClient({ post: initialPost }: BlogPostPageClientProps) {

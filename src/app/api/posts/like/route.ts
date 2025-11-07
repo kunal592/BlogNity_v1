@@ -40,6 +40,7 @@ export async function POST(req: NextRequest) {
         data: {
           userId,
           postId,
+          target: 'POST',
         },
       });
       const updatedPost = await prisma.post.update({
