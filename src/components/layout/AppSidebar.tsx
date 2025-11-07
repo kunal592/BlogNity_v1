@@ -73,8 +73,8 @@ export default function AppSidebar() {
         <Logo />
       </SidebarHeader>
       <SidebarContent className="p-2">
-        <form onSubmit={handleSearch} className="p-2">
-            <div className="relative">
+        <form onSubmit={handleSearch} className="p-2 flex items-center">
+            <div className="relative flex-grow">
                 <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input 
                     placeholder="Search users..."
@@ -83,6 +83,9 @@ export default function AppSidebar() {
                     onChange={(e) => setSearchQuery(e.target.value)}
                 />
             </div>
+            <Button type="submit" size="sm" className="ml-2">
+                Search
+            </Button>
         </form>
         <SidebarMenu>
           {navItems.map((item) => (

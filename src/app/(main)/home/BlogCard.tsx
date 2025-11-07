@@ -48,14 +48,14 @@ export default function BlogCard({ post, author }: BlogCardProps) {
     
     const newIsLiked = !isLiked;
     setIsLiked(newIsLiked);
-    setLikes(prev => newIsLiked ? prev + 1 : prev - 1);
+    setLikes((prev: number) => newIsLiked ? prev + 1 : prev - 1);
     
     try {
       await toggleLike(post.id, user.id);
       toast({ title: newIsLiked ? 'Post liked!' : 'Post unliked' });
     } catch(e) {
       setIsLiked(!newIsLiked);
-      setLikes(prev => newIsLiked ? prev - 1 : prev + 1);
+      setLikes((prev: number) => newIsLiked ? prev - 1 : prev + 1);
       toast({ title: 'Something went wrong', variant: 'destructive' });
     }
   };
@@ -89,11 +89,30 @@ export default function BlogCard({ post, author }: BlogCardProps) {
     }
   };
   
-  const handleSummarize = () => {
-    toast({
-      title: 'AI Summary',
-      description: 'This is a mock AI summary of the blog post. It provides a concise overview of the main points.',
-    });
+  const handleSummarize = async () => {
+    try {
+      const res = await fetch('/api/summarize', {
+        method: 'POST',
+        body: JSON.stringify({ content: post.content }),
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if(!res.ok) {
+        throw new Error("Failed to summarize");
+      }
+
+      const { summary } = await res.json();
+
+      toast({
+        title: 'AI Summary',
+        description: summary,
+      });
+    } catch (error) {
+      toast({ title: 'Failed to generate summary', variant: 'destructive' });
+    }
+    
   };
 
   const handleShare = () => {
@@ -133,7 +152,7 @@ export default function BlogCard({ post, author }: BlogCardProps) {
       </CardHeader>
       <CardContent className="p-4 flex-grow">
         <div className="flex gap-2 mb-2">
-          {(post.tags || []).map(postTag => (
+          {(post.tags || []).map((postTag: { tag: { id: string; name: string; } }) => (
             <Badge key={postTag.tag.id} variant="secondary">{postTag.tag.name}</Badge>
           ))}
         </div>

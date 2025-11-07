@@ -35,24 +35,24 @@ export default function EditProfilePage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
-    // Here you would typically call an API to update the user profile.
-    // For this example, we'll simulate an API call and use the session's update function.
+    
     try {
-        // const res = await fetch('/api/profile', { 
-        //     method: 'PUT', 
-        //     body: JSON.stringify({ name, username, bio, image })
-        // });
-        // const updatedUser = await res.json();
+        const res = await fetch('/api/profile', { 
+            method: 'PUT', 
+            body: JSON.stringify({ name, username, bio, image })
+        });
 
-        // For demonstration, we directly update the session
+        if (!res.ok) {
+          throw new Error("Failed to update profile");
+        }
+
+        const updatedUser = await res.json();
+
         await update({
             ...session,
             user: {
                 ...session?.user,
-                name,
-                username,
-                bio,
-                image,
+                ...updatedUser
             }
         })
         toast({ title: 'Profile updated successfully!' });

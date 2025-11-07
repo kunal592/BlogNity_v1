@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -42,7 +43,7 @@ export default function BlogPostPageClient({ post: initialPost }: BlogPostPageCl
     const handleLike = async () => {
         if (!session) return router.push('/signin');
         await toggleLike(post.id, session.user.id);
-        setIsLiked(!isLiked);
+        await refetchPost();
     };
 
     const handleBookmark = async () => {
@@ -79,9 +80,11 @@ export default function BlogPostPageClient({ post: initialPost }: BlogPostPageCl
                         <span className="mx-2">·</span>
                         <span>{format(new Date(post.createdAt), 'MMM d, yyyy')}</span>
                     </div>
-                    <Button size="sm" variant="outline" onClick={handleFollow}>
-                        {isFollowing ? 'Unfollow' : 'Follow'}                   
-                     </Button>
+                    {session?.user?.id !== post.author.id && (
+                        <Button size="sm" variant="outline" onClick={handleFollow}>
+                            {isFollowing ? 'Unfollow' : 'Follow'}                   
+                        </Button>
+                    )}
                 </div>
                 
                 <div data-color-mode="light">

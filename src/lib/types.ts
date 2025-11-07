@@ -1,28 +1,32 @@
-import { Prisma } from '@prisma/client';
 
-// Manually define the Post type with all the expected relations
-export type Post = Prisma.PostGetPayload<{
-  include: {
-    author: true,
-    comments: {
-      include: {
-        author: true
-      }
-    },
-    likedBy: true,
-  }
-}> & { tags: string[] }; // Ensure tags is always an array of strings
+import { Post as PrismaPost, User as PrismaUser } from '@prisma/client';
 
-// Manually define the User type with all the expected relations
-export type User = Prisma.UserGetPayload<{
-  include: {
-    posts: true,
-    comments: true,
-    likedPosts: true,
-    followers: true,
-    following: true,
-    notifications: true,
-    sentNotifications: true,
-    bookmarkedPosts: true,
-  }
-}>;
+export enum EntityType {
+    POST = "POST",
+    COMMENT = "COMMENT",
+    USER = "USER",
+}
+
+export enum NotificationType {
+    LIKE = "LIKE",
+    COMMENT = "COMMENT",
+    FOLLOW = "FOLLOW",
+    MENTION = "MENTION",
+    NEW_POST = "NEW_POST",
+    BOOKMARK = "BOOKMARK",
+    ADMIN_ALERT = "ADMIN_ALERT",
+}
+
+export interface ContactMessage {
+    id: string;
+    name: string;
+    email: string;
+    message: string;
+    status: string;
+    createdAt: Date;
+    updatedAt: Date;
+}
+
+export type Post = PrismaPost;
+export type User = PrismaUser;
+

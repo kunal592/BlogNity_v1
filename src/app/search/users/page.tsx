@@ -1,9 +1,18 @@
+
 'use client';
 
 import { useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { User } from '@/lib/types';
 import UserCard from '@/components/shared/UserCard';
+
+async function searchUsers(query: string): Promise<User[]> {
+  const response = await fetch(`/api/users/search?query=${query}`);
+  if (!response.ok) {
+    throw new Error('Failed to search for users');
+  }
+  return response.json();
+}
 
 export default function UserSearchPage() {
   const searchParams = useSearchParams();
@@ -15,11 +24,10 @@ export default function UserSearchPage() {
     if (query) {
       const fetchUsers = async () => {
         try {
-          const res = await fetch(`/api/users/search?query=${query}`);
-          const data = await res.json();
-          setUsers(data);
+          const results = await searchUsers(query);
+          setUsers(results);
         } catch (error) {
-          console.error("Error fetching search results:", error);
+          console.error("Error fetching user search results:", error);
         } finally {
           setLoading(false);
         }
@@ -34,7 +42,7 @@ export default function UserSearchPage() {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold mb-8">Search Results for "{query}"</h1>
+      <h1 className="text-3xl font-bold mb-8">User Search Results for "{query}"</h1>
       {users.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {users.map((user) => (
@@ -42,7 +50,7 @@ export default function UserSearchPage() {
           ))}
         </div>
       ) : (
-        <p>No results found.</p>
+        <p>No users found.</p>
       )}
     </div>
   );

@@ -1,7 +1,7 @@
 'use server';
 
-import { PrismaClient, EntityType, NotificationType, ContactMessage } from '@prisma/client';
-import type { Post, User } from '@prisma/client';
+import { PrismaClient, EntityType, NotificationType, PostStatus, PostVisibility } from '@prisma/client';
+import type { Post, User, ContactMessage } from '@prisma/client';
 import nodemailer from 'nodemailer';
 import { revalidatePath } from 'next/cache';
 import { getServerSession } from 'next-auth';
@@ -35,7 +35,7 @@ export const getTopAuthors = async () => {
     },
     take: 10,
   });
-  return authors.map(author => ({
+  return authors.map((author: any) => ({
     ...author,
     followersCount: author._count.receivedFollows,
   }));
@@ -53,7 +53,7 @@ export const getUserProfile = async (userId: string) => {
         },
       },
       posts: {
-        where: { status: 'PUBLISHED' },
+        where: { status: PostStatus.PUBLISHED },
         orderBy: { publishedAt: 'desc' },
         include: { 
           author: true,
@@ -101,8 +101,8 @@ export const getUserProfile = async (userId: string) => {
     followersCount: user._count.receivedFollows,
     followingCount: user._count.sentFollows,
     posts: user.posts || [],
-    bookmarkedPosts: (user.bookmarks || []).map(b => b.post),
-    followingUsers: (user.sentFollows || []).map(f => f.following)
+    bookmarkedPosts: (user.bookmarks || []).map((b: any) => b.post),
+    followingUsers: (user.sentFollows || []).map((f: any) => f.following)
   };
 };
 
@@ -119,7 +119,7 @@ export const getUsers = async (): Promise<User[]> => {
 export const getPosts = async (): Promise<any[]> => {
     const posts = await prisma.post.findMany({
       where: { 
-        status: 'PUBLISHED',
+        status: PostStatus.PUBLISHED,
       },
       include: {
         author: true,
@@ -164,7 +164,7 @@ export const getPost = async (slug: string): Promise<any | null> => {
 export const searchPosts = async (query: string): Promise<any[]> => {
     const posts = await prisma.post.findMany({
         where: {
-            status: 'PUBLISHED',
+            status: PostStatus.PUBLISHED,
             OR: [
                 {
                     title: {
@@ -227,7 +227,7 @@ export const getPostsByAuthor = async (authorId: string) => {
     const stats = await prisma.post.aggregate({
         where: {
             authorId: authorId,
-            status: 'PUBLISHED',
+            status: PostStatus.PUBLISHED,
         },
         _sum: {
             viewsCount: true,
@@ -251,7 +251,7 @@ const generateSlug = (title: string) => {
       .replace(/(^-|-$)+/g, '');
 };
 
-export const createPost = async (postData: { title: string; content: string; status: 'DRAFT' | 'PUBLISHED', visibility: 'PUBLIC' | 'PRIVATE', tags?: string[] }, authorId: string): Promise<Post> => {
+export const createPost = async (postData: { title: string; content: string; status: PostStatus, visibility: PostVisibility, tags?: string[] }, authorId: string): Promise<Post> => {
     const { title, content, status, visibility, tags = [] } = postData;
     let slug = generateSlug(title);
 
@@ -268,7 +268,7 @@ export const createPost = async (postData: { title: string; content: string; sta
             status,
             visibility,
             authorId,
-            publishedAt: status === 'PUBLISHED' ? new Date() : null,
+            publishedAt: status === PostStatus.PUBLISHED ? new Date() : null,
         }
     });
 
@@ -310,8 +310,8 @@ export const updatePost = async (postId: string, updateData: any): Promise<Post 
             slug,
             status,
             visibility,
-            updatedAt: new new Date(),
-            publishedAt: (await prisma.post.findUnique({where: {id: postId}}))?.status !== 'PUBLISHED' && status === 'PUBLISHED' ? new Date() : undefined,
+            updatedAt: new Date(),
+            publishedAt: (await prisma.post.findUnique({where: {id: postId}}))?.status !== PostStatus.PUBLISHED && status === PostStatus.PUBLISHED ? new Date() : undefined,
         }
     });
 };
@@ -341,7 +341,7 @@ export const getNotifications = async (userId: string) => {
     });
   
     const notificationsWithPosts = await Promise.all(
-      (notifications || []).map(async (notification) => {
+      (notifications || []).map(async (notification: any) => {
         if (notification.entityType === EntityType.POST && notification.entityId) {
           const post = await prisma.post.findUnique({
             where: { id: notification.entityId },
@@ -366,9 +366,21 @@ export const toggleLike = async (postId: string, userId: string) => {
     });
 
     if (existingLike) {
-        await prisma.like.delete({ where: { userId_postId: { userId, postId } } });
+        await prisma.$transaction([
+            prisma.like.delete({ where: { userId_postId: { userId, postId } } }),
+            prisma.post.update({ 
+                where: { id: postId }, 
+                data: { likesCount: { decrement: 1 } }
+            })
+        ]);
     } else {
-        await prisma.like.create({ data: { userId, postId } });
+        await prisma.$transaction([
+            prisma.like.create({ data: { userId, postId } }),
+            prisma.post.update({ 
+                where: { id: postId }, 
+                data: { likesCount: { increment: 1 } }
+            })
+        ]);
         if (post.authorId !== userId) {
             await prisma.notification.create({
                 data: {
@@ -405,7 +417,7 @@ export const toggleBookmark = async (postId: string, userId: string) => {
 
 export const toggleFollow = async (followingId: string) => {
     const session = await getServerSession(authOptions);
-    if(!session || !session.user) throw new Error("Unauthorized");
+    if (!session || !session.user) throw new Error("Unauthorized");
     const followerId = session.user.id;
 
     if (followerId === followingId) {
@@ -419,7 +431,16 @@ export const toggleFollow = async (followingId: string) => {
     if (existingFollow) {
         await prisma.follow.delete({ where: { followerId_followingId: { followerId, followingId } } });
     } else {
-        await prisma.follow.create({ data: { followerId, followingId } });
+        await prisma.$transaction([
+            prisma.follow.create({ data: { followerId, followingId } }),
+            prisma.notification.create({
+                data: {
+                    type: NotificationType.FOLLOW,
+                    actorId: followerId,
+                    recipientId: followingId,
+                },
+            }),
+        ]);
     }
     revalidatePath('/');
 };
